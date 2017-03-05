@@ -123,3 +123,7 @@ if __name__ == '__main__':
         fp = get_defaults()
         fp.cell_per_block = cell_per_block
         train_and_save_classifier(fp)
+    for hog_channel in [0, 1, 2, 'ALL']:
+        fp = get_defaults()
+        fp.hog_channel = hog_channel
+        train_and_save_classifier(fp)
