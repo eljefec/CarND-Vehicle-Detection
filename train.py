@@ -5,17 +5,20 @@ import matplotlib.pyplot as plt
 import classify as cl
 import load as ld
 from Stopwatch import Stopwatch 
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+from sklearn.svm import LinearSVC
 
 #files = ld.get_file_list('vehicles/')
-lists = ld.get_file_lists(['non-vehicles/', 'vehicles/'])
+lists = ld.get_file_lists(['vehicles/', 'non-vehicles/'])
 
-color_space='RGB', 
+color_space='YCrCb', 
 spatial_size=(16, 16)
 hist_bins = 16
-orient=6
+orient=9
 pix_per_cell=8
 cell_per_block=2
-hog_channel=0
+hog_channel='ALL'
 spatial_feat=True
 hist_feat=True
 hog_feat=True
@@ -48,3 +51,23 @@ for img_list in lists:
 
 sw.stop()
 print('Time for feature computation: ', sw.format_duration())
+print('Feature vector length: ', class_features[0][0].shape)
+
+X = np.vstack((class_features[0], class_features[1])).astype(np.float64)
+
+X_scaler = StandardScaler().fit(X)
+scaled_X = X_scaler.transform(X)
+
+y = np.hstack((np.ones(len(class_features[0])), 
+               np.zeros(len(class_features[1]))))
+
+rand_state = np.random.randint(0, 100)
+X_train, X_test, y_train, y_test = train_test_split(scaled_X, y, test_size=0.1, random_state=rand_state)
+
+svc = LinearSVC()
+sw = Stopwatch()
+sw.start()
+svc.fit(X_train, y_train)
+sw.stop()
+print('Time for fitting classifier: ', sw.format_duration())
+print('Test accuracy of SVC: ', round(svc.score(X_test, y_test), 4))
