@@ -64,13 +64,7 @@ def draw_boxes(img, bboxes, color=(0, 0, 255), thick=6):
     
 # Define a function you will pass an image 
 # and the list of windows to be searched (output of slide_windows())
-def search_windows(img, windows, clf, scaler, color_space='RGB', 
-                    spatial_size=(32, 32), hist_bins=32, 
-                    hist_range=(0, 256), orient=9, 
-                    pix_per_cell=8, cell_per_block=2, 
-                    hog_channel=0, spatial_feat=True, 
-                    hist_feat=True, hog_feat=True):
-
+def search_windows(img, windows, clf, scaler, feature_params):
     #1) Create an empty list to receive positive detection windows
     on_windows = []
     #2) Iterate over all windows in the list
@@ -78,14 +72,7 @@ def search_windows(img, windows, clf, scaler, color_space='RGB',
         #3) Extract the test window from original image
         test_img = cv2.resize(img[window[0][1]:window[1][1], window[0][0]:window[1][0]], (64, 64))      
         #4) Extract features for that window using single_img_features()
-        features = cl.single_img_features(test_img, 
-                                        color_space=color_space, 
-                                        spatial_size=spatial_size, 
-                                        hist_bins=hist_bins, 
-                                        orient=orient, pix_per_cell=pix_per_cell, cell_per_block=cell_per_block, 
-                                        hog_channel=hog_channel, 
-                                        spatial_feat=spatial_feat, 
-                                        hist_feat=hist_feat, hog_feat=hog_feat)
+        features = cl.single_img_features(test_img, feature_params)
         #5) Scale extracted features to be fed to classifier
         test_features = scaler.transform(np.array(features).reshape(1, -1))
         #6) Predict using your classifier
@@ -96,20 +83,20 @@ def search_windows(img, windows, clf, scaler, color_space='RGB',
     #8) Return windows for positive detections
     return on_windows
 
-# TODO: Extract parameter struct.
-color_space='YCrCb', 
-spatial_size=(16, 16)
-hist_bins = 16
-orient=9
-pix_per_cell=8
-cell_per_block=2
-hog_channel='ALL'
-spatial_feat=True
-hist_feat=True
-hog_feat=True
-vis = True
+fp = cl.FeatureParams(color_space = 'YCrCb', 
+                        spatial_size = (16, 16),
+                        hist_bins = 16,
+                        orient = 9,
+                        pix_per_cell = 8,
+                        cell_per_block = 2,
+                        hog_channel = 'ALL',
+                        spatial_feat = True,
+                        hist_feat = True,
+                        hog_feat = True)
 
-(clf, X_scaler) = tr.train_classifier(10)
+n_samples = 1000
+                        
+(clf, X_scaler) = tr.train_classifier(n_samples, fp)
     
 searchpath = 'test_images/*'
 example_images = glob.glob(searchpath)
@@ -126,18 +113,7 @@ for img_src in example_images:
     windows = slide_window(img, x_start_stop = [None, None], y_start_stop = y_start_stop, 
                     xy_window = (96, 96), xy_overlap  = (overlap, overlap))
                     
-    hot_windows = search_windows(img, windows, clf, X_scaler, 
-                                color_space,
-                                spatial_size,
-                                hist_bins,
-                                (0, 256),
-                                orient,
-                                pix_per_cell,
-                                cell_per_block,
-                                hog_channel,
-                                spatial_feat,
-                                hist_feat,
-                                hog_feat)
+    hot_windows = search_windows(img, windows, clf, X_scaler, fp)
     
     window_img = draw_boxes(draw_img, hot_windows, color = (0, 0, 255), thick = 6)
     images.append(window_img)
@@ -145,5 +121,5 @@ for img_src in example_images:
     sw.stop()
     print('Time to search one image: ', sw.format_duration(), ', Search window count: ', len(windows))
 
-fig = plt.figure(figsize = (18, 18), dpi = 300)
-cl.visualize(fig, 5, 2, images, titles)
+fig = plt.figure(figsize = (8, 11))
+cl.visualize(fig, len(example_images) / 2, 2, images, titles)

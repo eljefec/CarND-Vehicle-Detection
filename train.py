@@ -10,21 +10,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.svm import LinearSVC
 
 #files = ld.get_file_list('vehicles/')
-def train_classifier(n_samples):
+def train_classifier(n_samples, feature_params):
     lists = ld.get_file_lists(['vehicles/', 'non-vehicles/'])
-
-    # TODO: Extract parameter struct.
-    color_space='YCrCb', 
-    spatial_size=(16, 16)
-    hist_bins = 16
-    orient=9
-    pix_per_cell=8
-    cell_per_block=2
-    hog_channel='ALL'
-    spatial_feat=True
-    hist_feat=True
-    hog_feat=True
-    vis = True
 
     sw = Stopwatch()
     sw.start()
@@ -36,17 +23,7 @@ def train_classifier(n_samples):
         selected_paths = np.array(img_list)[random_idxs]
         print('e.g., ', selected_paths[0])
         # imgs.append(mpimg.imread(img_list[i]))
-        features = cl.extract_features(selected_paths,
-                                        color_space, 
-                                        spatial_size, 
-                                        hist_bins,
-                                        orient, 
-                                        pix_per_cell, 
-                                        cell_per_block,
-                                        hog_channel,
-                                        spatial_feat,
-                                        hist_feat,
-                                        hog_feat)
+        features = cl.extract_features(selected_paths, feature_params)
         print('len(features)', len(features))
         class_features.append(features)
 
