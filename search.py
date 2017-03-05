@@ -94,7 +94,7 @@ fp = cl.FeatureParams(color_space = 'YCrCb',
                         hist_feat = True,
                         hog_feat = True)
 
-n_samples = 1000
+n_samples = 10
                         
 (clf, X_scaler) = tr.train_classifier(n_samples, fp)
     
