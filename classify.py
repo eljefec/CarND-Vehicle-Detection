@@ -21,6 +21,19 @@ class FeatureParams:
         self.spatial_feat = spatial_feat
         self.hist_feat = hist_feat
         self.hog_feat = hog_feat
+        
+    def str(self):
+        return '{}-ss{}-hb{}-o{}-p{}-c{}-hc{}-sf{:d}-hist{:d}-hog{:d}'.format(
+                    self.color_space,
+                    self.spatial_size,
+                    self.hist_bins,
+                    self.orient,
+                    self.pix_per_cell,
+                    self.cell_per_block,
+                    self.hog_channel,
+                    self.spatial_feat,
+                    self.hist_feat,
+                    self.hog_feat)
 
 def bin_spatial(img, size=(32, 32)):
     # Use cv2.resize().ravel() to create the feature vector

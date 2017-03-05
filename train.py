@@ -1,36 +1,35 @@
-import numpy as np
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
+import numpy as np
+import os
+import pickle
 
 import classify as cl
 import load as ld
+
 from Stopwatch import Stopwatch 
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.svm import LinearSVC
 
-#files = ld.get_file_list('vehicles/')
+# Set n_samples = 0 when you want to use all training data.
 def train_classifier(n_samples, feature_params):
     lists = ld.get_file_lists(['vehicles/', 'non-vehicles/'])
 
-    sw = Stopwatch()
-    sw.start()
+    feature_sw = Stopwatch()
 
     class_features = []
     for img_list in lists:
-        print(len(img_list))
-        random_idxs = np.random.randint(0, len(img_list), n_samples)
-        selected_paths = np.array(img_list)[random_idxs]
-        print('e.g., ', selected_paths[0])
-        # imgs.append(mpimg.imread(img_list[i]))
+        if n_samples > 0:
+            random_idxs = np.random.randint(0, len(img_list), n_samples)
+            selected_paths = np.array(img_list)[random_idxs]
+        else:
+            selected_paths = img_list
+
         features = cl.extract_features(selected_paths, feature_params)
-        print('len(features)', len(features))
         class_features.append(features)
 
-    sw.stop()
-    print('Time for feature computation: ', sw.format_duration())
-    print('Feature vector length: ', class_features[0][0].shape)
-    print('Example counts: ', len(class_features[0]), len(class_features[1]))
+    feature_sw.stop()
 
     X = np.vstack((class_features[0], class_features[1])).astype(np.float64)
 
@@ -44,11 +43,83 @@ def train_classifier(n_samples, feature_params):
     X_train, X_test, y_train, y_test = train_test_split(scaled_X, y, test_size=0.1, random_state=rand_state)
 
     svc = LinearSVC()
-    sw = Stopwatch()
-    sw.start()
+    fit_sw = Stopwatch()
     svc.fit(X_train, y_train)
-    sw.stop()
-    print('Time for fitting classifier: ', sw.format_duration())
-    print('Test accuracy of SVC: ', round(svc.score(X_test, y_test), 4))
+    fit_sw.stop()
     
-    return (svc, X_scaler)
+    data = dict()
+    data['time_for_feature_computation'] = feature_sw.format_duration()
+    data['feature_vector_length'] = class_features[0][0].shape
+    data['car_example_counts'] = len(class_features[0])
+    data['notcar_example_counts'] = len(class_features[1])
+    data['time_for_fitting_classifier'] = fit_sw.format_duration()
+    data['test_accuracy'] = svc.score(X_test, y_test)
+    data['rand_state'] = rand_state
+    
+    print(data)
+    
+    data['clf'] = svc
+    data['x_scaler'] = X_scaler
+    
+    return (svc, X_scaler, data)
+    
+def save_data(data, filename):
+    with open(filename, 'wb') as f:
+        pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+
+def load_data(filename):
+    with open(filename, 'rb') as f:
+        data = pickle.load(f)
+    return data
+
+def train_and_save_classifier(feature_params, n_samples = 0):
+    print('Training classifier. Params=[{}]'.format(feature_params.str()))
+
+    folder = 'trained_models'
+    if not os.path.isdir(folder):
+        os.mkdir(folder)
+    
+    (svc, X_scaler, data) = train_classifier(n_samples, feature_params)
+    test_accuracy = round(data['test_accuracy'], 4) * 100
+
+    filename = folder + '/' + feature_params.str() + '-acc' + str(test_accuracy) + '.p'
+    save_data(data, filename)
+    
+def get_defaults():
+    return cl.FeatureParams(color_space = 'HLS', 
+                            spatial_size = (16, 16),
+                            hist_bins = 16,
+                            orient = 9,
+                            pix_per_cell = 8,
+                            cell_per_block = 2,
+                            hog_channel = 'ALL',
+                            spatial_feat = True,
+                            hist_feat = True,
+                            hog_feat = True)
+    
+if __name__ == '__main__':
+    # Experiment with different feature extraction parameters.
+    for color_space in ['RGB', 'HSV', 'LUV', 'HLS', 'YUV', 'YCrCb']:
+        fp = get_defaults()
+        fp.color_space = color_space
+        train_and_save_classifier(fp)
+    for spatial_size in [(12, 12), (16, 16), (20, 20)]:
+        fp = get_defaults()
+        fp.spatial_size = spatial_size
+        train_and_save_classifier(fp)
+    for hist_bins in [12, 16, 20]:
+        fp = get_defaults()
+        fp.hist_bins = hist_bins
+        train_and_save_classifier(fp)
+    for orient in [6, 9, 12]:
+        fp = get_defaults()
+        fp.orient = orient
+        train_and_save_classifier(fp)
+    for pix_per_cell in [6, 8, 10]:
+        fp = get_defaults()
+        fp.pix_per_cell = pix_per_cell
+        train_and_save_classifier(fp)
+    for cell_per_block in [1, 2, 4]:
+        fp = get_defaults()
+        fp.cell_per_block = cell_per_block
+        train_and_save_classifier(fp)

@@ -95,7 +95,7 @@ fp = cl.FeatureParams(color_space = 'YCrCb',
                         hog_feat = True)
 
 n_samples = 10
-                        
+
 (clf, X_scaler) = tr.train_classifier(n_samples, fp)
     
 searchpath = 'test_images/*'

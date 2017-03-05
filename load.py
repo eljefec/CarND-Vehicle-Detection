@@ -12,7 +12,7 @@ def get_file_list(basedir):
         if os.path.isdir(subpath):
             list.extend(glob.glob(subpath + '/*'))
         
-    print('Dir: {}, Number Found: {}'.format(basedir, len(list)))
+    print('Dir: {}, Files Found: {}'.format(basedir, len(list)))
     if not list:
         raise FileNotFoundError('Files were not found. basedir=[{}]'.format(basedir))
     return list
@@ -21,5 +21,4 @@ def get_file_lists(basedirs):
     lists = []
     for basedir in basedirs:
         lists.append(get_file_list(basedir))
-    print('len(lists):', len(lists))
     return lists
