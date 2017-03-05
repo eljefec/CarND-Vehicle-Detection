@@ -70,7 +70,7 @@ def extract_features(image_paths,
                                             hist_bins, 
                                             orient, pix_per_cell, cell_per_block, hog_channel,
                                             spatial_feat, hist_feat, hog_feat)
-        features.append(np.concatenate(file_features))
+        features.append(file_features)
     # Return list of feature vectors
     return features
 
@@ -124,9 +124,6 @@ def single_img_features(image,
                         pix_per_cell, cell_per_block, vis, feature_vec=True)
         # Append the new feature vector to the features list
         features.append(hog_features)
-    
-    for f in features:
-        print(f.shape)
     
     if vis:
         return np.concatenate(features), hog_image
