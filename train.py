@@ -120,6 +120,6 @@ if __name__ == '__main__':
         fp.hist_feat = enabled[1]
         fp.hog_feat = enabled[2]
         train_and_save_classifier(fp)
-
-    fp = get_defaults()
-    train_and_save_classifier(fp)
+    for attempt in range(10):
+        fp = get_defaults()
+        train_and_save_classifier(fp)
