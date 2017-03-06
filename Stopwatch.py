@@ -1,8 +1,10 @@
 import datetime
 import time
 
-def format_seconds(secs):
-    delta = datetime.timedelta(seconds=int(secs))
+def format_seconds(secs, coarse):
+    if (coarse):
+        secs = int(secs)
+    delta = datetime.timedelta(seconds=secs)
     return str(delta)
 
 def format_now():
@@ -35,5 +37,5 @@ class Stopwatch:
         self._started = False
         self._start = 0
         
-    def format_duration(self):
-        return format_seconds(self._duration)
+    def format_duration(self, coarse = True):
+        return format_seconds(self._duration, coarse)

@@ -86,7 +86,6 @@ def search_windows(img, windows, clf, scaler, feature_params):
 if __name__ == '__main__':
     (fp, clf, X_scaler) = tr.load_classifier('trained_models/HSV-ss(16, 16)-hb16-o9-p8-c2-hcALL-sf1-hist1-hog1-acc99.49.p')
 
-        
     searchpath = 'test_images/*'
     example_images = glob.glob(searchpath)
     images = []
@@ -108,7 +107,7 @@ if __name__ == '__main__':
         images.append(window_img)
         titles.append(img_src)
         sw.stop()
-        print('Time to search one image: ', sw.format_duration(), ', Search window count: ', len(windows))
+        print('Time to search one image: ', sw.format_duration(coarse=False), ', Search window count: ', len(windows))
 
     fig = plt.figure(figsize = (8, 11))
     cl.visualize(fig, len(example_images) / 2, 2, images, titles)
