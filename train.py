@@ -89,6 +89,15 @@ def train_and_save_classifier(feature_params, n_samples = 0):
     filename = make_pickle_filename(folder, feature_params, test_accuracy)
     save_data(data, filename)
     
+def load_classifier(filename):
+    data = load_data(filename)
+    
+    fp = data['feature_params']
+    clf = data['clf']
+    X_scaler = data['x_scaler']
+    
+    return (fp, clf, X_scaler)
+    
 def get_defaults():
     return cl.FeatureParams(color_space = 'HLS', 
                             spatial_size = (16, 16),

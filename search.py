@@ -82,44 +82,33 @@ def search_windows(img, windows, clf, scaler, feature_params):
             on_windows.append(window)
     #8) Return windows for positive detections
     return on_windows
-
-fp = cl.FeatureParams(color_space = 'YCrCb', 
-                        spatial_size = (16, 16),
-                        hist_bins = 16,
-                        orient = 9,
-                        pix_per_cell = 8,
-                        cell_per_block = 2,
-                        hog_channel = 'ALL',
-                        spatial_feat = True,
-                        hist_feat = True,
-                        hog_feat = True)
-
-n_samples = 10
-
-(clf, X_scaler) = tr.train_classifier(n_samples, fp)
     
-searchpath = 'test_images/*'
-example_images = glob.glob(searchpath)
-images = []
-titles = []
-y_start_stop = [400, 656]
-overlap = 0.5
-for img_src in example_images:
-    sw = Stopwatch()
-    img = mpimg.imread(img_src)
-    draw_img = np.copy(img)
-    img = img.astype(np.float32)/255
-    
-    windows = slide_window(img, x_start_stop = [None, None], y_start_stop = y_start_stop, 
-                    xy_window = (96, 96), xy_overlap  = (overlap, overlap))
-                    
-    hot_windows = search_windows(img, windows, clf, X_scaler, fp)
-    
-    window_img = draw_boxes(draw_img, hot_windows, color = (0, 0, 255), thick = 6)
-    images.append(window_img)
-    titles.append(img_src)
-    sw.stop()
-    print('Time to search one image: ', sw.format_duration(), ', Search window count: ', len(windows))
+if __name__ == '__main__':
+    (fp, clf, X_scaler) = tr.load_classifier('trained_models/HSV-ss(16, 16)-hb16-o9-p8-c2-hcALL-sf1-hist1-hog1-acc99.49.p')
 
-fig = plt.figure(figsize = (8, 11))
-cl.visualize(fig, len(example_images) / 2, 2, images, titles)
+        
+    searchpath = 'test_images/*'
+    example_images = glob.glob(searchpath)
+    images = []
+    titles = []
+    y_start_stop = [400, 656]
+    overlap = 0.5
+    for img_src in example_images:
+        sw = Stopwatch()
+        img = mpimg.imread(img_src)
+        draw_img = np.copy(img)
+        img = img.astype(np.float32)/255
+        
+        windows = slide_window(img, x_start_stop = [None, None], y_start_stop = y_start_stop, 
+                        xy_window = (96, 96), xy_overlap  = (overlap, overlap))
+                        
+        hot_windows = search_windows(img, windows, clf, X_scaler, fp)
+        
+        window_img = draw_boxes(draw_img, hot_windows, color = (0, 0, 255), thick = 6)
+        images.append(window_img)
+        titles.append(img_src)
+        sw.stop()
+        print('Time to search one image: ', sw.format_duration(), ', Search window count: ', len(windows))
+
+    fig = plt.figure(figsize = (8, 11))
+    cl.visualize(fig, len(example_images) / 2, 2, images, titles)
