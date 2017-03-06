@@ -91,25 +91,28 @@ def extract_features(image_paths, feature_params):
         features.append(file_features)
     # Return list of feature vectors
     return features
-
-def single_img_features(image, f_params, vis=False):
-    # apply color conversion if other than 'RGB'
-    feature_image = np.copy(image)
     
+def convert_color(img, f_params):
     color_space = f_params.color_space
     if color_space != 'RGB':
         if color_space == 'HSV':
-            feature_image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+            return cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
         elif color_space == 'LUV':
-            feature_image = cv2.cvtColor(image, cv2.COLOR_RGB2LUV)
+            return cv2.cvtColor(img, cv2.COLOR_RGB2LUV)
         elif color_space == 'HLS':
-            feature_image = cv2.cvtColor(image, cv2.COLOR_RGB2HLS)
+            return cv2.cvtColor(img, cv2.COLOR_RGB2HLS)
         elif color_space == 'YUV':
-            feature_image = cv2.cvtColor(image, cv2.COLOR_RGB2YUV)
+            return cv2.cvtColor(img, cv2.COLOR_RGB2YUV)
         elif color_space == 'YCrCb':
-            feature_image = cv2.cvtColor(image, cv2.COLOR_RGB2YCrCb)
+            return cv2.cvtColor(img, cv2.COLOR_RGB2YCrCb)
+        else:
+            raise ValueError('Unsupported color_space. [{}]'.format(color_space))
     else:
-        feature_image = np.copy(image)
+        return np.copy(image)
+
+def single_img_features(image, f_params, vis=False):
+    # Apply color conversion if other than 'RGB'
+    feature_image = convert_color(image, f_params)
 
     features = []
     
@@ -166,3 +169,87 @@ def visualize(fig, rows, cols, imgs, titles):
             plt.imshow(img)
             plt.title(titles[i])
     plt.show()
+    
+def full_hog(filename, fp, clf, X_scaler):
+    img = mpimg.imread(filename)
+    return full_hog_single_image(img, fp, clf, X_scaler)
+    
+# Based on Ryan Keenan's code in Vehicle Detection Walkthrough of Project Q&A video.
+def full_hog_single_img(img, fp, clf, X_scaler):
+    ystart = 400
+    ystop = 656
+    scale = 1
+    
+    count = 0
+    
+    draw_img = np.copy(img)
+    heatmap = np.zeros_like(img[:,:,0])
+    img = img.astype(np.float32) / 255
+    
+    img_tosearch = img[ystart:ystop,:,:]
+    ctrans_tosearch = convert_color(img, fp)
+    #ctrans_tosearch = cv2.cvtColor(img_tosearch, cv2.COLOR_RGB2YCrCb)
+    if scale != 1:
+        imshape = ctrans_tosearch.shape
+        ctrans_tosearch = cv2.resize(ctrans_tosearch, (np.int(imshape[1]/scale), np.int(imshape[0]/scale)))
+        
+    channel_count = 3
+    channels = []
+    for i in range(channel_count):
+        channels.append(ctrans_tosearch[:,:,i])
+        
+    full_hog = []
+    for ch in channels:
+        full_hog.append(get_hog_features(ch, 
+                                        fp.orient, 
+                                        fp.pix_per_cell, 
+                                        fp.cell_per_block, 
+                                        vis=False, 
+                                        feature_vec=False))
+    
+    nxblocks = (channels[0].shape[1] // fp.pix_per_cell) - 1
+    nyblocks = (channels[0].shape[0] // fp.pix_per_cell) - 1
+    nfeat_per_block = fp.orient * fp.cell_per_block ** 2
+    window = 64
+    nblocks_per_window = (window // fp.pix_per_cell) - 1
+    cells_per_step = 2
+    nxsteps = (nxblocks - nblocks_per_window) // cells_per_step
+    nysteps = (nyblocks - nblocks_per_window) // cells_per_step
+    
+    for xb in range(nxsteps):
+        for yb in range(nysteps):
+            count += 1
+            ypos = yb * cells_per_step
+            xpos = xb * cells_per_step
+            
+            hog_feat = []
+            for h in full_hog:
+                hog_feat.append(h[ypos : ypos + nblocks_per_window,
+                                  xpos : xpos + nblocks_per_window].ravel())
+                                  
+            hog_features = np.hstack((hog_feat[0], hog_feat[1], hog_feat[2]))
+            
+            xleft = xpos * fp.pix_per_cell
+            ytop = ypos * fp.pix_per_cell
+            
+            subimg = cv2.resize(ctrans_tosearch[ytop : ytop + window,
+                                                xleft : xleft + window], (64, 64))
+                                                
+            spatial_features = bin_spatial(subimg, size=fp.spatial_size)
+            hist_features = color_hist(subimg, nbins=fp.hist_bins)
+            
+            stacked = np.hstack((spatial_features, hist_features, hog_features)).reshape(1, -1)
+            test_features = X_scaler.transform(stacked)
+            test_prediction = clf.predict(test_features)
+            
+            if test_prediction == 1:
+                xbox_left = np.int(xleft * scale)
+                ytop_draw = np.int(ytop * scale)
+                win_draw = np.int(window * scale)
+                bbox = ((xbox_left, ytop_draw + ystart), 
+                        (xbox_left + win_draw, ytop_draw + win_draw + ystart))
+                cv2.rectangle(draw_img, bbox[0], bbox[1], (0, 0, 255))
+                #img_boxes.append(bbox)
+                heatmap[bbox[0][1] : bbox[1][1], bbox[0][0] : bbox[1][0]] += 1
+    
+    return (draw_img, heatmap)

@@ -83,31 +83,64 @@ def search_windows(img, windows, clf, scaler, feature_params):
     #8) Return windows for positive detections
     return on_windows
     
-if __name__ == '__main__':
-    (fp, clf, X_scaler) = tr.load_classifier('trained_models/HSV-ss(16, 16)-hb16-o9-p8-c2-hcALL-sf1-hist1-hog1-acc99.49.p')
-
-    searchpath = 'test_images/*'
-    example_images = glob.glob(searchpath)
-    images = []
-    titles = []
-    y_start_stop = [400, 656]
-    overlap = 0.5
-    for img_src in example_images:
-        sw = Stopwatch()
-        img = mpimg.imread(img_src)
+class Searcher:
+    def __init__(self, feature_params, clf, X_scaler):
+        self.feature_params = feature_params
+        self.clf = clf
+        self.X_scaler = X_scaler
+        
+    # hog_flavor values: 'local', 'full'
+    def search(self, img, hog_flavor):
+        if hog_flavor == 'local':
+            return self.search_local_hog(img)
+        elif hog_flavor == 'full':
+            return self.search_full_hog(img)
+        else:
+            raise ValueError('Invalid hog_flavor. [{}]'.format(hog_flavor))
+        
+    def search_local_hog(self, img):
+        y_start_stop = [400, 656]
+        overlap = 0.5
         draw_img = np.copy(img)
-        img = img.astype(np.float32)/255
+        img = img.astype(np.float32) / 255
         
         windows = slide_window(img, x_start_stop = [None, None], y_start_stop = y_start_stop, 
                         xy_window = (96, 96), xy_overlap  = (overlap, overlap))
                         
-        hot_windows = search_windows(img, windows, clf, X_scaler, fp)
+        hot_windows = search_windows(img, windows, self.clf, self.X_scaler, self.feature_params)
         
         window_img = draw_boxes(draw_img, hot_windows, color = (0, 0, 255), thick = 6)
-        images.append(window_img)
-        titles.append(img_src)
-        sw.stop()
-        print('Time to search one image: ', sw.format_duration(coarse=False), ', Search window count: ', len(windows))
+        
+        print('Search window count: ', len(windows))
+        
+        return [window_img]
+        
+    def search_full_hog(self, img):
+        draw_img, heatmap = cl.full_hog_single_img(img, self.feature_params, self.clf, self.X_scaler)
+        return [draw_img, heatmap]
+    
+if __name__ == '__main__':
+    #model = 'trained_models/HSV-ss(16, 16)-hb16-o9-p8-c2-hcALL-sf1-hist1-hog1-acc99.49.p'
+    model = 'trained_models/HLS-ss(16, 16)-hb16-o9-p10-c2-hcALL-sf1-hist1-hog1-acc99.32.p'
+    (fp, clf, X_scaler) = tr.load_classifier(model)
+
+    searcher = Searcher(fp, clf, X_scaler)
+    searchpath = 'test_images/*'
+    example_imgs = glob.glob(searchpath)
+    imgs = []
+    titles = []
+
+    for img_src in example_imgs:
+        img = mpimg.imread(img_src)
+
+        for flavor in ['local', 'full']:
+            sw = Stopwatch()
+            found_imgs = searcher.search(img, flavor)
+            sw.stop()
+            imgs.extend(found_imgs)
+            for i in range(len(found_imgs)):
+                titles.extend(['{} {}'.format(flavor, img_src)])
+            print('Flavor: {}, Time to search one image: {}'.format(flavor, sw.format_duration(coarse=False)))
 
     fig = plt.figure(figsize = (8, 11))
-    cl.visualize(fig, len(example_images) / 2, 2, images, titles)
+    cl.visualize(fig, len(example_imgs), 3, imgs, titles)
