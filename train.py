@@ -112,13 +112,15 @@ def get_defaults():
     
 if __name__ == '__main__':
     # Experiment with different feature extraction parameters.
-    for attempt in range(10):
+    for attempt in range(4):
         print()
         print('Attempt ', attempt)
-        for color_space in ['HLS', 'HSV']:
+        for color_space in ['YCrCb']:
             for pix_per_cell in [8, 10]:
-                print()
-                fp = get_defaults()
-                fp.color_space = color_space
-                fp.pix_per_cell = pix_per_cell
-                train_and_save_classifier(fp)
+                for hog_channel in [0, 1, 2, 'ALL']:
+                    print()
+                    fp = get_defaults()
+                    fp.color_space = color_space
+                    fp.pix_per_cell = pix_per_cell
+                    fp.hog_channel = hog_channel
+                    train_and_save_classifier(fp)
