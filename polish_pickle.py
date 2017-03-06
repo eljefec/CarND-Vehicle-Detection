@@ -11,10 +11,14 @@ def polish_pickle(feature_params, test_accuracy):
     print('feature_params:', data['feature_params'].str())
 
 if __name__ == '__main__':
-    fp = tr.get_defaults()
     fp.pix_per_cell = 10
     polish_pickle(fp, 99.32)
     
     fp = tr.get_defaults()
     fp.color_space = 'HSV'
     polish_pickle(fp, 99.32)
+
+    fp = tr.get_defaults()
+    fp.color_space = 'YCrCb'
+    fp.pix_per_cell = 8
+    polish_pickle(fp, 99.21)
