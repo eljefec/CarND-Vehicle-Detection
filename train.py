@@ -94,7 +94,7 @@ def get_defaults():
                             spatial_size = (16, 16),
                             hist_bins = 16,
                             orient = 9,
-                            pix_per_cell = 8,
+                            pix_per_cell = 10,
                             cell_per_block = 2,
                             hog_channel = 'ALL',
                             spatial_feat = True,
@@ -103,26 +103,13 @@ def get_defaults():
     
 if __name__ == '__main__':
     # Experiment with different feature extraction parameters.
-    for hist_bins in [16]:
-        fp = get_defaults()
-        fp.hist_bins = hist_bins
-        train_and_save_classifier(fp)
-    for pix_per_cell in [10]:
-        fp = get_defaults()
-        fp.pix_per_cell = pix_per_cell
-        train_and_save_classifier(fp)
-    for hog_channel in [0, 1, 2]:
-        fp = get_defaults()
-        fp.hog_channel = hog_channel
-        train_and_save_classifier(fp)
-    for enabled in [(False, True, True), 
-                    (True, False, True), 
-                    (True, True, False)]:
-        fp = get_defaults()
-        fp.spatial_feat = enabled[0]
-        fp.hist_feat = enabled[1]
-        fp.hog_feat = enabled[2]
-        train_and_save_classifier(fp)
     for attempt in range(10):
-        fp = get_defaults()
-        train_and_save_classifier(fp)
+        print()
+        print('Attempt ', attempt)
+        for color_space in ['HLS', 'HSV']:
+            for pix_per_cell in [8, 10]:
+                print()
+                fp = get_defaults()
+                fp.color_space = color_space
+                fp.pix_per_cell = pix_per_cell
+                train_and_save_classifier(fp)
