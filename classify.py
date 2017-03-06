@@ -188,25 +188,22 @@ def visualize(fig, rows, cols, imgs, titles):
             plt.title(titles[i])
     plt.show()
     
-def full_hog(filename, fp, clf, X_scaler):
+def full_hog(filename, fp, clf, X_scaler, scale):
     img = mpimg.imread(filename)
-    return full_hog_single_image(img, fp, clf, X_scaler)
+    return full_hog_single_image(img, fp, clf, X_scaler, scale)
     
 # Based on Ryan Keenan's code in Vehicle Detection Walkthrough of Project Q&A video.
-def full_hog_single_img(img, fp, clf, X_scaler):
+def full_hog_single_img(img, fp, clf, X_scaler, scale):
     ystart = 400
     ystop = 656
-    scale = 1.5
-    
-    count = 0
     
     draw_img = np.copy(img)
     heatmap = np.zeros_like(img[:,:,0])
     img = img.astype(np.float32) / 255
     
     img_tosearch = img[ystart:ystop,:,:]
-    ctrans_tosearch = convert_color(img, fp)
-    #ctrans_tosearch = cv2.cvtColor(img_tosearch, cv2.COLOR_RGB2YCrCb)
+    ctrans_tosearch = convert_color(img_tosearch, fp)
+    
     if scale != 1:
         imshape = ctrans_tosearch.shape
         ctrans_tosearch = cv2.resize(ctrans_tosearch, (np.int(imshape[1]/scale), np.int(imshape[0]/scale)))
@@ -218,12 +215,13 @@ def full_hog_single_img(img, fp, clf, X_scaler):
         
     full_hog = []
     for ch in channels:
-        full_hog.append(get_hog_features(ch, 
-                                        fp.orient, 
-                                        fp.pix_per_cell, 
-                                        fp.cell_per_block, 
-                                        vis=False, 
-                                        feature_vec=False))
+        hog = get_hog_features(ch, 
+                                fp.orient, 
+                                fp.pix_per_cell, 
+                                fp.cell_per_block, 
+                                vis=False, 
+                                feature_vec=False)
+        full_hog.append(hog)
     
     nxblocks = (channels[0].shape[1] // fp.pix_per_cell) - 1
     nyblocks = (channels[0].shape[0] // fp.pix_per_cell) - 1
@@ -237,7 +235,6 @@ def full_hog_single_img(img, fp, clf, X_scaler):
     
     for xb in range(nxsteps):
         for yb in range(nysteps):
-            count += 1
             ypos = yb * cells_per_step
             xpos = xb * cells_per_step
             
@@ -265,10 +262,12 @@ def full_hog_single_img(img, fp, clf, X_scaler):
                 xbox_left = np.int(xleft * scale)
                 ytop_draw = np.int(ytop * scale)
                 win_draw = np.int(window * scale)
-                bbox = ((xbox_left, ytop_draw + ystart), 
-                        (xbox_left + win_draw, ytop_draw + win_draw + ystart))
-                cv2.rectangle(draw_img, bbox[0], bbox[1], (0, 0, 255))
-                #img_boxes.append(bbox)
-                heatmap[bbox[0][1] : bbox[1][1], bbox[0][0] : bbox[1][0]] += 1
+                top_left = (xbox_left, ytop_draw + ystart)
+                bottom_right = (xbox_left + win_draw, ytop_draw + win_draw + ystart)
+                bbox = (top_left, bottom_right)
+                cv2.rectangle(draw_img, top_left, bottom_right, (0, 0, 255), thickness = 6)
+                heatmap[top_left[1] : bottom_right[1], top_left[0] : bottom_right[0]] += 1
     
-    return (draw_img, heatmap)
+    window_count = nxsteps * nysteps
+    
+    return (draw_img, heatmap, window_count)
