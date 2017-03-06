@@ -73,6 +73,9 @@ def load_data(filename):
         data = pickle.load(f)
     return data
 
+def make_pickle_filename(folder, feature_params, test_accuracy):
+    return folder + '/' + feature_params.str() + '-acc' + str(test_accuracy) + '.p' 
+
 def train_and_save_classifier(feature_params, n_samples = 0):
     print('Training classifier. Params=[{}]'.format(feature_params.str()))
 
@@ -83,7 +86,7 @@ def train_and_save_classifier(feature_params, n_samples = 0):
     (svc, X_scaler, data) = train_classifier(n_samples, feature_params)
     test_accuracy = round(data['test_accuracy'], 4) * 100
 
-    filename = folder + '/' + feature_params.str() + '-acc' + str(test_accuracy) + '.p'
+    filename = make_pickle_filename(folder, feature_params, test_accuracy)
     save_data(data, filename)
     
 def get_defaults():
