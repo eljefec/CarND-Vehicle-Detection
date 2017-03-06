@@ -14,7 +14,7 @@ from sklearn.svm import LinearSVC
 
 # Set n_samples = 0 when you want to use all training data.
 def train_classifier(n_samples, feature_params):
-    lists = ld.get_file_lists(['vehicles/', 'non-vehicles/'])
+    lists = ld.get_file_lists(['../data/vehicles/', '../data/non-vehicles/'])
 
     feature_sw = Stopwatch()
 
@@ -55,6 +55,7 @@ def train_classifier(n_samples, feature_params):
     data['time_for_fitting_classifier'] = fit_sw.format_duration()
     data['test_accuracy'] = svc.score(X_test, y_test)
     data['rand_state'] = rand_state
+    data['feature_params'] = feature_params
     
     print(data)
     
@@ -99,31 +100,26 @@ def get_defaults():
     
 if __name__ == '__main__':
     # Experiment with different feature extraction parameters.
-    for color_space in ['RGB', 'HSV', 'LUV', 'HLS', 'YUV', 'YCrCb']:
-        fp = get_defaults()
-        fp.color_space = color_space
-        train_and_save_classifier(fp)
-    for spatial_size in [(12, 12), (16, 16), (20, 20)]:
-        fp = get_defaults()
-        fp.spatial_size = spatial_size
-        train_and_save_classifier(fp)
-    for hist_bins in [12, 16, 20]:
+    for hist_bins in [16]:
         fp = get_defaults()
         fp.hist_bins = hist_bins
         train_and_save_classifier(fp)
-    for orient in [6, 9, 12]:
-        fp = get_defaults()
-        fp.orient = orient
-        train_and_save_classifier(fp)
-    for pix_per_cell in [6, 8, 10]:
+    for pix_per_cell in [10]:
         fp = get_defaults()
         fp.pix_per_cell = pix_per_cell
         train_and_save_classifier(fp)
-    for cell_per_block in [1, 2, 4]:
-        fp = get_defaults()
-        fp.cell_per_block = cell_per_block
-        train_and_save_classifier(fp)
-    for hog_channel in [0, 1, 2, 'ALL']:
+    for hog_channel in [0, 1, 2]:
         fp = get_defaults()
         fp.hog_channel = hog_channel
         train_and_save_classifier(fp)
+    for enabled in [(False, True, True), 
+                    (True, False, True), 
+                    (True, True, False)]:
+        fp = get_defaults()
+        fp.spatial_feat = enabled[0]
+        fp.hist_feat = enabled[1]
+        fp.hog_feat = enabled[2]
+        train_and_save_classifier(fp)
+
+    fp = get_defaults()
+    train_and_save_classifier(fp)

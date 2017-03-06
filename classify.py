@@ -120,7 +120,6 @@ def single_img_features(image, f_params, vis=False):
         hist_features = color_hist(feature_image, nbins = f_params.hist_bins)
         features.append(hist_features)
     if f_params.hog_feat:
-        # Call get_hog_features() with vis=False, feature_vec=True
         if f_params.hog_channel == 'ALL':
             hog_features = []
             for channel in range(feature_image.shape[2]):
@@ -134,14 +133,14 @@ def single_img_features(image, f_params, vis=False):
             #hog_features = np.concatenate(hog_features)
         else:
             if vis:
-                hog_features, hog_image = get_hog_features(feature_image[:,:,hog_channel], 
+                hog_features, hog_image = get_hog_features(feature_image[:,:,f_params.hog_channel], 
                                                            f_params.orient, 
                                                            f_params.pix_per_cell, 
                                                            f_params.cell_per_block, 
                                                            vis, 
                                                            feature_vec=True)
             else:
-                hog_features = get_hog_features(feature_image[:,:,hog_channel], 
+                hog_features = get_hog_features(feature_image[:,:,f_params.hog_channel], 
                                                 f_params.orient, 
                                                 f_params.pix_per_cell, 
                                                 f_params.cell_per_block, 
