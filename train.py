@@ -95,6 +95,11 @@ def load_classifier(filename):
     fp = data['feature_params']
     clf = data['clf']
     X_scaler = data['x_scaler']
+    test_accuracy = data['test_accuracy']
+    
+    print('Loaded classifier. ', filename)
+    print('Test accuracy: ', round(test_accuracy, 4))
+    print(fp.descriptive_str())
     
     return (fp, clf, X_scaler)
     

@@ -34,6 +34,24 @@ class FeatureParams:
                     self.spatial_feat,
                     self.hist_feat,
                     self.hog_feat)
+    
+    def descriptive_str(self):
+        d = dict()
+        d['Color space'] = self.color_space
+        d['Spatial size'] = self.spatial_size
+        d['Color histogram bins'] = self.hist_bins
+        d['HOG orientations'] = self.orient
+        d['HOG pixels per cell'] = self.pix_per_cell
+        d['HOG cell per block'] = self.cell_per_block
+        d['HOG channel'] = self.hog_channel
+        d['Spatial features'] = self.spatial_feat
+        d['Histogram features'] = self.hist_feat
+        d['HOG features'] = self.hog_feat
+        
+        result = ''
+        for key, value in d.items():
+            result += '\n' + key + ': ' + str(value)
+        return result
 
 def bin_spatial(img, size=(32, 32)):
     # Use cv2.resize().ravel() to create the feature vector
@@ -178,7 +196,7 @@ def full_hog(filename, fp, clf, X_scaler):
 def full_hog_single_img(img, fp, clf, X_scaler):
     ystart = 400
     ystop = 656
-    scale = 1
+    scale = 1.5
     
     count = 0
     
@@ -212,7 +230,8 @@ def full_hog_single_img(img, fp, clf, X_scaler):
     nfeat_per_block = fp.orient * fp.cell_per_block ** 2
     window = 64
     nblocks_per_window = (window // fp.pix_per_cell) - 1
-    cells_per_step = 2
+    # Controls overlap. 
+    cells_per_step = 4
     nxsteps = (nxblocks - nblocks_per_window) // cells_per_step
     nysteps = (nyblocks - nblocks_per_window) // cells_per_step
     
