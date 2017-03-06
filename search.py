@@ -84,11 +84,12 @@ def search_windows(img, windows, clf, scaler, feature_params):
     return on_windows
     
 class Searcher:
-    def __init__(self, feature_params, clf, X_scaler, scale):
+    def __init__(self, feature_params, clf, X_scaler, scale, y_start_stop):
         self.feature_params = feature_params
         self.clf = clf
         self.X_scaler = X_scaler
         self.scale = scale
+        self.y_start_stop = y_start_stop
         
     # hog_flavor values: 'local', 'full'
     def search(self, img, hog_flavor):
@@ -100,7 +101,6 @@ class Searcher:
             raise ValueError('Invalid hog_flavor. [{}]'.format(hog_flavor))
         
     def search_local_hog(self, img):
-        y_start_stop = [400, 656]
         overlap = 0.5
         draw_img = np.copy(img)
         img = img.astype(np.float32) / 255
@@ -108,7 +108,7 @@ class Searcher:
         window = int(self.scale * 64)
         xy_window = (window, window)
         
-        windows = slide_window(img, x_start_stop = [None, None], y_start_stop = y_start_stop, 
+        windows = slide_window(img, x_start_stop = [None, None], y_start_stop = self.y_start_stop, 
                         xy_window = xy_window, xy_overlap  = (overlap, overlap))
                         
         hot_windows = search_windows(img, windows, self.clf, self.X_scaler, self.feature_params)
@@ -118,7 +118,12 @@ class Searcher:
         return [window_img], len(windows)
         
     def search_full_hog(self, img):
-        draw_img, heatmap, window_count = cl.full_hog_single_img(img, self.feature_params, self.clf, self.X_scaler, self.scale)
+        draw_img, heatmap, window_count = cl.full_hog_single_img(img, 
+                                                                self.feature_params, 
+                                                                self.clf, 
+                                                                self.X_scaler, 
+                                                                self.scale, 
+                                                                self.y_start_stop)
         
         return [draw_img, heatmap], window_count
     
@@ -129,7 +134,7 @@ if __name__ == '__main__':
     model = 'trained_models/YCrCb-ss(16, 16)-hb16-o9-p8-c2-hcALL-sf1-hist1-hog1-acc99.72.p'
     (fp, clf, X_scaler) = tr.load_classifier(model)
 
-    searcher = Searcher(fp, clf, X_scaler, 2)
+    searcher = Searcher(fp, clf, X_scaler, scale = 1, y_start_stop = (400, 656))
     searchpath = 'test_images/*'
     example_imgs = glob.glob(searchpath)
     #example_imgs = ['test_images/test1.jpg']

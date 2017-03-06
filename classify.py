@@ -50,7 +50,7 @@ class FeatureParams:
         
         result = ''
         for key, value in d.items():
-            result += '\n' + key + ': ' + str(value)
+            result += key + ': ' + str(value) + '\n'
         return result
 
 def bin_spatial(img, size=(32, 32)):
@@ -193,9 +193,9 @@ def full_hog(filename, fp, clf, X_scaler, scale):
     return full_hog_single_image(img, fp, clf, X_scaler, scale)
     
 # Based on Ryan Keenan's code in Vehicle Detection Walkthrough of Project Q&A video.
-def full_hog_single_img(img, fp, clf, X_scaler, scale):
-    ystart = 400
-    ystop = 656
+def full_hog_single_img(img, fp, clf, X_scaler, scale, y_start_stop):
+    ystart = y_start_stop[0]
+    ystop = y_start_stop[1]
     
     draw_img = np.copy(img)
     heatmap = np.zeros_like(img[:,:,0])
