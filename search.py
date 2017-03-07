@@ -3,6 +3,7 @@ import glob
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.ndimage.measurements import label
 
 import classify as cl
 import train as tr
@@ -88,6 +89,21 @@ def apply_threshold(heatmap, threshold):
     heatmap[heatmap <= threshold] = 0
     return heatmap
     
+def draw_labeled_bboxes(img, labels):
+    # Iterate through all detected cars
+    for car_number in range(1, labels[1]+1):
+        # Find pixels with each car_number label value
+        nonzero = (labels[0] == car_number).nonzero()
+        # Identify x and y values of those pixels
+        nonzeroy = np.array(nonzero[0])
+        nonzerox = np.array(nonzero[1])
+        # Define a bounding box based on min/max x and y
+        bbox = ((np.min(nonzerox), np.min(nonzeroy)), (np.max(nonzerox), np.max(nonzeroy)))
+        # Draw the box on the image
+        cv2.rectangle(img, bbox[0], bbox[1], (0,0,255), 6)
+    # Return the image
+    return img
+    
 class SearchParams:
     def __init__(self, scale, y_start_stop):
         self.scale = scale
@@ -102,27 +118,30 @@ class Searcher:
         self.clf = clf
         self.X_scaler = X_scaler
     
-    def multiscale_search(self, img, hog_flavor, search_params):
+    def search(self, img, hog_flavor, search_params):
         search_window_total = 0
         all_hot_windows = []
         for sp in search_params:
-            hot_windows, search_window_count = self.search(img, hog_flavor, sp.scale, sp.y_start_stop)
+            hot_windows, search_window_count = self.single_search(img, hog_flavor, sp.scale, sp.y_start_stop)
             all_hot_windows.extend(hot_windows)
             search_window_total += search_window_count
 
+        window_img = draw_boxes(img, all_hot_windows, color = (0, 0, 255), thick = 5)
+            
         heatmap = np.zeros_like(img[:,:,0])
         for bbox in all_hot_windows:
             top_left = bbox[0]
             bottom_right = bbox[1]
             heatmap[top_left[1] : bottom_right[1], top_left[0] : bottom_right[0]] += 1
 
-        heatmap = apply_threshold(heatmap, 2)
-            
-        window_img = draw_boxes(img, all_hot_windows, color = (0, 0, 255), thick = 5)
-        return heatmap, window_img, search_window_total
+        heatmap = apply_threshold(heatmap, 1)
+        labels = label(heatmap)
+        labeled_img = draw_labeled_bboxes(img, labels)
+        
+        return heatmap, labeled_img, search_window_total
     
     # hog_flavor values: 'local', 'full'
-    def search(self, img, hog_flavor, scale, y_start_stop):
+    def single_search(self, img, hog_flavor, scale, y_start_stop):
         if hog_flavor == 'local':
             return self.search_local_hog(img, scale, y_start_stop)
         elif hog_flavor == 'full':
@@ -168,9 +187,9 @@ if __name__ == '__main__':
     #example_imgs = ['test_images/test1.jpg']
     imgs = []
     titles = []
-    search_params = [SearchParams(1, (400, 656)),
-                     SearchParams(1.5, (400, 656))]
-                     #SearchParams(2, (400, 656))]
+    search_params = [SearchParams(1, (400, 500)),
+                     SearchParams(1.5, (400, 550)),
+                     SearchParams(2, (400, 656))]
     
     for sp in search_params:
         print(sp.str())
@@ -178,13 +197,13 @@ if __name__ == '__main__':
     for img_src in example_imgs:
         img = mpimg.imread(img_src)
 
-        for flavor in ['full', 'local']:
+        for flavor in ['full']:
             sw = Stopwatch()
-            heatmap, boxes_img, window_count = searcher.multiscale_search(img, flavor, search_params)
+            heatmap, labeled_img, window_count = searcher.search(img, flavor, search_params)
             sw.stop()
             
             imgs.append(heatmap)
-            imgs.append(boxes_img)
+            imgs.append(labeled_img)
             for i in range(2):
                 titles.extend(['{} {}'.format(flavor, img_src)])
             print('Flavor: {}, Window count: {}, Time to search one image: {}'.format(flavor, window_count, sw.format_duration(coarse=False)))
