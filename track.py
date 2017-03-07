@@ -172,6 +172,11 @@ def process_video(input_fname, output_fname):
     output_clip.write_videofile(output_fname, audio=False)
         
 if __name__ == '__main__':
+    import os
+    folder = 'output_video'
+    if not os.path.isdir(folder):
+        os.makedirs(folder)
+        
     # model = 'trained_models/HSV-ss(16, 16)-hb16-o9-p8-c2-hcALL-sf1-hist1-hog1-acc99.49.p'
     # model = 'trained_models/HLS-ss(16, 16)-hb16-o9-p10-c2-hcALL-sf1-hist1-hog1-acc99.32.p'
     # model = 'trained_models/YCrCb-ss(16, 16)-hb16-o9-p8-c2-hcALL-sf1-hist1-hog1-acc99.21.p'
