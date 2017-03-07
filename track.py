@@ -11,7 +11,8 @@ class Tracker:
         
     def track(self, img):
         ### TODO: Implement tracking.
-        heatmap, labeled_img, window_count = searcher.search(img, 'full', self.search_params)
+        heatmap, label_boxes, window_count = searcher.search(img, 'full', self.search_params)
+        labeled_img = sr.draw_boxes(img, label_boxes)
         return labeled_img
 
 def process_img(img):
@@ -36,3 +37,4 @@ if __name__ == '__main__':
     tracker = Tracker(searcher, 5, sp)
     
     process_video('test_video.mp4', 'output_video/test_video.mp4')
+    #process_video('project_video.mp4', 'output_video/project_video.mp4')
