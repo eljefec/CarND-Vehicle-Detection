@@ -83,49 +83,77 @@ def search_windows(img, windows, clf, scaler, feature_params):
     #8) Return windows for positive detections
     return on_windows
     
-class Searcher:
-    def __init__(self, feature_params, clf, X_scaler, scale, y_start_stop):
-        self.feature_params = feature_params
-        self.clf = clf
-        self.X_scaler = X_scaler
+def apply_threshold(heatmap, threshold):
+    # Zero out pixels below the threshold
+    heatmap[heatmap <= threshold] = 0
+    return heatmap
+    
+class SearchParams:
+    def __init__(self, scale, y_start_stop):
         self.scale = scale
         self.y_start_stop = y_start_stop
         
+    def str(self):
+        return 'Scale: ' + str(self.scale) + ', y_start_stop: ' + str(self.y_start_stop)
+    
+class Searcher:
+    def __init__(self, feature_params, clf, X_scaler):
+        self.feature_params = feature_params
+        self.clf = clf
+        self.X_scaler = X_scaler
+    
+    def multiscale_search(self, img, hog_flavor, search_params):
+        search_window_total = 0
+        all_hot_windows = []
+        for sp in search_params:
+            hot_windows, search_window_count = self.search(img, hog_flavor, sp.scale, sp.y_start_stop)
+            all_hot_windows.extend(hot_windows)
+            search_window_total += search_window_count
+
+        heatmap = np.zeros_like(img[:,:,0])
+        for bbox in all_hot_windows:
+            top_left = bbox[0]
+            bottom_right = bbox[1]
+            heatmap[top_left[1] : bottom_right[1], top_left[0] : bottom_right[0]] += 1
+
+        heatmap = apply_threshold(heatmap, 2)
+            
+        window_img = draw_boxes(img, all_hot_windows, color = (0, 0, 255), thick = 5)
+        return heatmap, window_img, search_window_total
+    
     # hog_flavor values: 'local', 'full'
-    def search(self, img, hog_flavor):
+    def search(self, img, hog_flavor, scale, y_start_stop):
         if hog_flavor == 'local':
-            return self.search_local_hog(img)
+            return self.search_local_hog(img, scale, y_start_stop)
         elif hog_flavor == 'full':
-            return self.search_full_hog(img)
+            return self.search_full_hog(img, scale, y_start_stop)
         else:
             raise ValueError('Invalid hog_flavor. [{}]'.format(hog_flavor))
         
-    def search_local_hog(self, img):
+    def search_local_hog(self, img, scale, y_start_stop):
         overlap = 0.5
         draw_img = np.copy(img)
         img = img.astype(np.float32) / 255
         
-        window = int(self.scale * 64)
+        window = int(scale * 64)
         xy_window = (window, window)
         
-        windows = slide_window(img, x_start_stop = [None, None], y_start_stop = self.y_start_stop, 
+        windows = slide_window(img, x_start_stop = [None, None], y_start_stop = y_start_stop, 
                         xy_window = xy_window, xy_overlap  = (overlap, overlap))
                         
         hot_windows = search_windows(img, windows, self.clf, self.X_scaler, self.feature_params)
         
-        window_img = draw_boxes(draw_img, hot_windows, color = (0, 0, 255), thick = 6)
+        return hot_windows, len(windows)
         
-        return [window_img], len(windows)
+    def search_full_hog(self, img, scale, y_start_stop):
+        hot_windows, window_count = cl.full_hog_single_img(img, 
+                                                            self.feature_params, 
+                                                            self.clf, 
+                                                            self.X_scaler, 
+                                                            scale, 
+                                                            y_start_stop)
         
-    def search_full_hog(self, img):
-        draw_img, heatmap, window_count = cl.full_hog_single_img(img, 
-                                                                self.feature_params, 
-                                                                self.clf, 
-                                                                self.X_scaler, 
-                                                                self.scale, 
-                                                                self.y_start_stop)
-        
-        return [draw_img, heatmap], window_count
+        return hot_windows, window_count
     
 if __name__ == '__main__':
     # model = 'trained_models/HSV-ss(16, 16)-hb16-o9-p8-c2-hcALL-sf1-hist1-hog1-acc99.49.p'
@@ -134,25 +162,32 @@ if __name__ == '__main__':
     model = 'trained_models/YCrCb-ss(16, 16)-hb16-o9-p8-c2-hcALL-sf1-hist1-hog1-acc99.72.p'
     (fp, clf, X_scaler) = tr.load_classifier(model)
 
-    searcher = Searcher(fp, clf, X_scaler, scale = 1, y_start_stop = (400, 656))
+    searcher = Searcher(fp, clf, X_scaler)
     searchpath = 'test_images/*'
     example_imgs = glob.glob(searchpath)
     #example_imgs = ['test_images/test1.jpg']
     imgs = []
     titles = []
+    search_params = [SearchParams(1, (400, 656)),
+                     SearchParams(1.5, (400, 656))]
+                     #SearchParams(2, (400, 656))]
+    
+    for sp in search_params:
+        print(sp.str())
 
     for img_src in example_imgs:
         img = mpimg.imread(img_src)
 
         for flavor in ['full', 'local']:
             sw = Stopwatch()
-            found_imgs, window_count = searcher.search(img, flavor)
+            heatmap, boxes_img, window_count = searcher.multiscale_search(img, flavor, search_params)
             sw.stop()
             
-            imgs.extend(found_imgs)
-            for i in range(len(found_imgs)):
+            imgs.append(heatmap)
+            imgs.append(boxes_img)
+            for i in range(2):
                 titles.extend(['{} {}'.format(flavor, img_src)])
             print('Flavor: {}, Window count: {}, Time to search one image: {}'.format(flavor, window_count, sw.format_duration(coarse=False)))
 
     fig = plt.figure(figsize = (8, 11))
-    cl.visualize(fig, len(imgs) / len(example_imgs), len(example_imgs), imgs, titles)
+    cl.visualize(fig, len(example_imgs), len(imgs) / len(example_imgs), imgs, titles)

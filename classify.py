@@ -193,6 +193,7 @@ def full_hog(filename, fp, clf, X_scaler, scale):
     return full_hog_single_image(img, fp, clf, X_scaler, scale)
     
 # Based on Ryan Keenan's code in Vehicle Detection Walkthrough of Project Q&A video.
+# https://www.youtube.com/watch?v=P2zwrTM8ueA
 def full_hog_single_img(img, fp, clf, X_scaler, scale, y_start_stop):
     ystart = y_start_stop[0]
     ystop = y_start_stop[1]
@@ -229,9 +230,11 @@ def full_hog_single_img(img, fp, clf, X_scaler, scale, y_start_stop):
     window = 64
     nblocks_per_window = (window // fp.pix_per_cell) - 1
     # Controls overlap. 
-    cells_per_step = 4
+    cells_per_step = 2
     nxsteps = (nxblocks - nblocks_per_window) // cells_per_step
     nysteps = (nyblocks - nblocks_per_window) // cells_per_step
+    
+    hot_windows = []
     
     for xb in range(nxsteps):
         for yb in range(nysteps):
@@ -265,9 +268,8 @@ def full_hog_single_img(img, fp, clf, X_scaler, scale, y_start_stop):
                 top_left = (xbox_left, ytop_draw + ystart)
                 bottom_right = (xbox_left + win_draw, ytop_draw + win_draw + ystart)
                 bbox = (top_left, bottom_right)
-                cv2.rectangle(draw_img, top_left, bottom_right, (0, 0, 255), thickness = 6)
-                heatmap[top_left[1] : bottom_right[1], top_left[0] : bottom_right[0]] += 1
+                hot_windows.append(bbox)
     
     window_count = nxsteps * nysteps
     
-    return (draw_img, heatmap, window_count)
+    return (hot_windows, window_count)
