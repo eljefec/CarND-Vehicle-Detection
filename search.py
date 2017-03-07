@@ -111,6 +111,12 @@ class SearchParams:
         
     def str(self):
         return 'Scale: ' + str(self.scale) + ', y_start_stop: ' + str(self.y_start_stop)
+        
+    @staticmethod
+    def get_defaults():
+        return [SearchParams(1, (400, 500)),
+                SearchParams(1.5, (400, 550)),
+                SearchParams(2, (400, 656))]
     
 class Searcher:
     def __init__(self, feature_params, clf, X_scaler):
@@ -187,9 +193,7 @@ if __name__ == '__main__':
     #example_imgs = ['test_images/test1.jpg']
     imgs = []
     titles = []
-    search_params = [SearchParams(1, (400, 500)),
-                     SearchParams(1.5, (400, 550)),
-                     SearchParams(2, (400, 656))]
+    search_params = SearchParams.get_defaults()
     
     for sp in search_params:
         print(sp.str())
