@@ -88,9 +88,9 @@ def apply_threshold(heatmap, threshold):
     # Zero out pixels below the threshold
     heatmap[heatmap <= threshold] = 0
     return heatmap
-    
-def draw_labeled_bboxes(img, labels):
-    # Iterate through all detected cars
+        
+def convert_to_bboxes(labels):
+    bboxes = []
     for car_number in range(1, labels[1]+1):
         # Find pixels with each car_number label value
         nonzero = (labels[0] == car_number).nonzero()
@@ -99,10 +99,8 @@ def draw_labeled_bboxes(img, labels):
         nonzerox = np.array(nonzero[1])
         # Define a bounding box based on min/max x and y
         bbox = ((np.min(nonzerox), np.min(nonzeroy)), (np.max(nonzerox), np.max(nonzeroy)))
-        # Draw the box on the image
-        cv2.rectangle(img, bbox[0], bbox[1], (0,0,255), 6)
-    # Return the image
-    return img
+        bboxes.append(bbox)
+    return bboxes
     
 class SearchParams:
     def __init__(self, scale, y_start_stop):
@@ -131,8 +129,6 @@ class Searcher:
             hot_windows, search_window_count = self.single_search(img, hog_flavor, sp.scale, sp.y_start_stop)
             all_hot_windows.extend(hot_windows)
             search_window_total += search_window_count
-
-        window_img = draw_boxes(img, all_hot_windows, color = (0, 0, 255), thick = 5)
             
         heatmap = np.zeros_like(img[:,:,0])
         for bbox in all_hot_windows:
@@ -140,11 +136,10 @@ class Searcher:
             bottom_right = bbox[1]
             heatmap[top_left[1] : bottom_right[1], top_left[0] : bottom_right[0]] += 1
 
-        heatmap = apply_threshold(heatmap, 1)
         labels = label(heatmap)
-        labeled_img = draw_labeled_bboxes(img, labels)
+        label_boxes = convert_to_bboxes(labels)
         
-        return heatmap, labeled_img, search_window_total
+        return heatmap, label_boxes, search_window_total
     
     # hog_flavor values: 'local', 'full'
     def single_search(self, img, hog_flavor, scale, y_start_stop):
@@ -203,8 +198,10 @@ if __name__ == '__main__':
 
         for flavor in ['full']:
             sw = Stopwatch()
-            heatmap, labeled_img, window_count = searcher.search(img, flavor, search_params)
+            heatmap, label_boxes, window_count = searcher.search(img, flavor, search_params)
             sw.stop()
+            
+            labeled_img = draw_boxes(img, label_boxes)
             
             imgs.append(heatmap)
             imgs.append(labeled_img)
