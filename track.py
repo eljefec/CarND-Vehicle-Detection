@@ -43,7 +43,7 @@ class Box:
         return self.center.get_distance(other.center)
 
 class Vehicle:
-    def __init__(self, box, window_size = 8):
+    def __init__(self, box, window_size = 10):
         self.box = box
         self.window_size = window_size
         
@@ -101,16 +101,28 @@ class Tracker:
         self.heatmap_threshold_per_frame = heatmap_threshold_per_frame
         self.frames = deque()
         self.vehicles = []
+        self.heatmap_boxes_count = 0
         
     def track(self, img):
         self.add_frame(searcher.search(img, 'full', self.search_params))
         
         heatmap, boxes = self.smooth_heatmaps()
         
+        self.check_box_change(boxes)
+        
         self.update_vehicles(boxes)
         self.remove_vehicles()
         
         return self.draw_vehicle_boxes(img)
+        
+    def check_box_change(self, boxes):
+        if len(boxes) != self.heatmap_boxes_count:
+            self.reset_vehicles()
+            
+        self.heatmap_boxes_count = len(boxes)
+        
+    def reset_vehicles(self):
+        self.vehicles[:] = []
         
     def update_vehicles(self, box_tuples):
         boxes = []
@@ -157,7 +169,7 @@ class Tracker:
         for f in self.frames:
             heatmaps.append(f.heatmap)
         heatmap = np.sum(heatmaps, axis = 0)
-        heatmap = sr.apply_threshold(heatmap, self.heatmap_threshold_per_frame * len(self.frames))
+        heatmap = sr.apply_threshold(heatmap, int(self.heatmap_threshold_per_frame * len(self.frames)))
         labels = label(heatmap)
         boxes = sr.convert_to_bboxes(labels)
         return heatmap, boxes
@@ -187,12 +199,13 @@ if __name__ == '__main__':
     
     sp = sr.SearchParams.get_defaults()
     
-    for threshold in [1, 2, 3]:
-        print('Threshold: ', threshold)
-        tracker = Tracker(searcher, sp, 5, heatmap_threshold_per_frame = threshold)
-        process_video('test_video.mp4', 'output_video/test_video_th{}.mp4'.format(threshold))
+    #for threshold in [0.75, 1]:
+        #print('Threshold: ', threshold)
+        #tracker = Tracker(searcher, sp, 5, heatmap_threshold_per_frame = threshold)
+        #process_video('test_video.mp4', 'output_video/test_video_th{}.mp4'.format(threshold))
     
-    for threshold in [1, 2, 3]:
-        print('Threshold: ', threshold)    
-        tracker = Tracker(searcher, sp, 5, heatmap_threshold_per_frame = threshold)
-        process_video('project_video.mp4', 'output_video/project_video_th{}.mp4'.format(threshold))
+    for threshold in [0.75, 1]:
+        for window_size in [7, 10, 5]:
+            print('Threshold: ', threshold, ', Heatmap Window Size: ', window_size)
+            tracker = Tracker(searcher, sp, window_size, heatmap_threshold_per_frame = threshold)
+            process_video('project_video.mp4', 'output_video/project_video_th{}_hw{}.mp4'.format(threshold, window_size))
