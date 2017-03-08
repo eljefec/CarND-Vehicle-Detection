@@ -94,11 +94,12 @@ class Frame:
         self.label_boxes = label_boxes
         
 class Tracker:
-    def __init__(self, searcher, search_params, window_size, heatmap_threshold_per_frame):
+    def __init__(self, searcher, search_params, heatmap_window_size, heatmap_threshold_per_frame, vehicle_window_size):
         self.searcher = searcher
         self.search_params = search_params
-        self.window_size = window_size
+        self.heatmap_window_size = heatmap_window_size
         self.heatmap_threshold_per_frame = heatmap_threshold_per_frame
+        self.vehicle_window_size = vehicle_window_size
         self.frames = deque()
         self.vehicles = []
         self.heatmap_boxes_count = 0
@@ -138,7 +139,7 @@ class Tracker:
         
         for claimed, box in zip(claimed, boxes):
             if not claimed:
-                self.vehicles.append(Vehicle(box))
+                self.vehicles.append(Vehicle(box, self.vehicle_window_size))
     
     def remove_vehicles(self):
         removal_list = []
@@ -161,7 +162,7 @@ class Tracker:
         label_boxes = search_result[1]
         self.frames.appendleft(Frame(heatmap, label_boxes))
         
-        if len(self.frames) > self.window_size:
+        if len(self.frames) > self.heatmap_window_size:
             discard_frame = self.frames.pop()
 
     def smooth_heatmaps(self):
@@ -205,7 +206,11 @@ if __name__ == '__main__':
         #process_video('test_video.mp4', 'output_video/test_video_th{}.mp4'.format(threshold))
     
     for threshold in [0.75, 1]:
-        for window_size in [7, 10, 5]:
-            print('Threshold: ', threshold, ', Heatmap Window Size: ', window_size)
-            tracker = Tracker(searcher, sp, window_size, heatmap_threshold_per_frame = threshold)
-            process_video('project_video.mp4', 'output_video/project_video_th{}_hw{}.mp4'.format(threshold, window_size))
+        for heatmap_window_size in [5, 7, 10]:
+            for vehicle_window_size in [5, 7, 10]:
+                print('Threshold: ', threshold, ', Heatmap Window Size: ', heatmap_window_size, ', Vehicle Window Size: ', vehicle_window_size)
+                tracker = Tracker(searcher, sp, 
+                                    heatmap_window_size, 
+                                    heatmap_threshold_per_frame = threshold, 
+                                    vehicle_window_size = vehicle_window_size)
+                process_video('project_video.mp4', 'output_video/project_video_th{}_hw{}_vw{}.mp4'.format(threshold, heatmap_window_size, vehicle_window_size))
