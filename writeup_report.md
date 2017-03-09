@@ -19,6 +19,7 @@ The goals / steps of this project are the following:
 [noncar]: ./output_images/noncar.png
 [hog]: ./output_images/hog.png
 [sliding_window]: ./output_images/sliding_window.png
+[color_spatial]: ./output_images/color_spatial.png
 [video1]: ./project_video.mp4
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/513/view) Points
@@ -50,6 +51,10 @@ The code depends on `skimage.feature.hog()` to extract HOG features from an imag
 Here is an example of HOG output using the `YCrCb` color space and HOG parameters of `orientations=9`, `pixels_per_cell=(8, 8)` and `cells_per_block=(2, 2)`:
 
 ![alt text][hog]
+
+I also included spatial information and color histogram in the features. Here is an example with parameters `spatial_size=(16, 16)` and `hist_bins=16`:
+
+![alt text][color_spatial]
 
 ####2. Explain how you settled on your final choice of HOG parameters.
 
