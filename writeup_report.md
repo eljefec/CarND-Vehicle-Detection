@@ -18,6 +18,7 @@ The goals / steps of this project are the following:
 [car]: ./output_images/car.png
 [noncar]: ./output_images/noncar.png
 [hog]: ./output_images/hog.png
+[sliding_window]: ./output_images/sliding_window.png
 [video1]: ./project_video.mp4
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/513/view) Points
@@ -91,9 +92,8 @@ My final model pickled in `YCrCb-ss(16, 16)-hb16-o9-p8-c2-hcALL-sf1-hist1-hog1-a
 ####1. Describe how (and identify where in your code) you implemented a sliding window search.  How did you decide what scales to search and how much to overlap windows?
 
 ##TODO
-I decided to search random window positions at random scales all over the image and came up with this (ok just kidding I didn't actually ;):
 
-![alt text][image3]
+![alt text][sliding_window]
 
 ####2. Show some examples of test images to demonstrate how your pipeline is working.  What did you do to optimize the performance of your classifier?
 
