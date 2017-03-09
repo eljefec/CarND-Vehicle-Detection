@@ -104,11 +104,11 @@ def load_classifier(filename):
     return (fp, clf, X_scaler)
     
 def get_defaults():
-    return cl.FeatureParams(color_space = 'HLS', 
+    return cl.FeatureParams(color_space = 'YCrCb', 
                             spatial_size = (16, 16),
                             hist_bins = 16,
                             orient = 9,
-                            pix_per_cell = 10,
+                            pix_per_cell = 8,
                             cell_per_block = 2,
                             hog_channel = 'ALL',
                             spatial_feat = True,
