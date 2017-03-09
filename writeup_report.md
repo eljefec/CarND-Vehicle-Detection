@@ -20,6 +20,12 @@ The goals / steps of this project are the following:
 [hog]: ./output_images/hog.png
 [sliding_window]: ./output_images/sliding_window.png
 [color_spatial]: ./output_images/color_spatial.png
+[heatmap_label1]: ./output_images/heatmap_label1.png
+[heatmap_label2]: ./output_images/heatmap_label2.png
+[heatmap_label3]: ./output_images/heatmap_label3.png
+[heatmap_label4]: ./output_images/heatmap_label4.png
+[heatmap_label5]: ./output_images/heatmap_label5.png
+[heatmap_label6]: ./output_images/heatmap_label6.png
 [video1]: ./project_video.mp4
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/513/view) Points
@@ -121,9 +127,18 @@ To keep the number of search windows small, I had less overlap at smaller scales
 ####2. Show some examples of test images to demonstrate how your pipeline is working.  What did you do to optimize the performance of your classifier?
 
 ##TODO
-Ultimately I searched on two scales using YCrCb 3-channel HOG features plus spatially binned color and histograms of color in the feature vector, which provided a nice result.  Here are some example images:
+I experimented with the feature parameters (like spatial size, color histogram bin count, and HOG parameters) to optimize the test accuracy of my classifier as I described above. I manually tried different search parameters (like scale, y_start_stop, overlap, and scale count) and visually evaluated the results on the 6 test images below. I also tweaked the search parameters when I was evaluating my pipeline's output for the project video.
 
-![alt text][image4]
+At first, I applied a heatmap threshold to the output of my search pipeline, but I found I got better video results when I instead applied the heatmap threshold to a sliding window heatmap. This is explained more below.
+
+Here are the heatmap and labeled bounding boxes for the 6 test images:
+
+![alt text][heatmap_label1]
+![alt text][heatmap_label2]
+![alt text][heatmap_label3]
+![alt text][heatmap_label4]
+![alt text][heatmap_label5]
+![alt text][heatmap_label6]
 ---
 
 ### Video Implementation
