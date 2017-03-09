@@ -34,7 +34,7 @@ This is my write-up. Thank you for reviewing my project!
 
 ####1. Explain how (and identify where in your code) you extracted HOG features from the training images.
 
-This code is in `classify.py` in functions `get_hog_features()` (lines 79-97), and `full_hog_single_img()` (lines 197-274).
+This code is in `classify.py` in functions `get_hog_features()` (lines 79-97), and `full_hog_single_img()` (lines 197-274). `single_img_features()` (lines 131-176) gets spatial, color, and HOG features for one patch at a time, whereas `full_hog_single_img()` calculates HOG once for an image then searches across the image for classifier matches.
 
 I started by reading in all the `vehicle` and `non-vehicle` images.  Here is an example of one of each of the `vehicle` and `non-vehicle` classes:
 
@@ -44,21 +44,46 @@ I started by reading in all the `vehicle` and `non-vehicle` images.  Here is an 
 #####Not Car
 ![alt text][noncar]
 
-Here is an example using the `YCrCb` color space and HOG parameters of `orientations=9`, `pixels_per_cell=(8, 8)` and `cells_per_block=(2, 2)`:
+The code depends on `skimage.feature.hog()` to extract HOG features from an image.
+
+Here is an example of HOG output using the `YCrCb` color space and HOG parameters of `orientations=9`, `pixels_per_cell=(8, 8)` and `cells_per_block=(2, 2)`:
 
 ![alt text][hog]
 
 ####2. Explain how you settled on your final choice of HOG parameters.
 
-##TODO
-I tried various combinations of parameters and...
-I then explored different color spaces and different `skimage.hog()` parameters (`orientations`, `pixels_per_cell`, and `cells_per_block`).  I grabbed random images from each of the two classes and displayed them to get a feel for what the `skimage.hog()` output looks like.
-
+I tried various combinations of parameters including HOG and evaluated the test accuracy of a trained linear SVM classifier on a set-aside test set. I settled on the HOG parameters that led to reasonably high test accuracy of the classifier.
 
 ####3. Describe how (and identify where in your code) you trained a classifier using your selected HOG features (and color features if you used them).
 
-##TODO
-I trained a linear SVM using...
+The code for classifier training is in `train.py`, mainly in function `train_classifier()` (lines 16-65).
+
+I trained a linear SVM using `sklearn.preprocessing.StandardScaler` for normalizing features, `sklearn.model_selection.train_test_split` for splitting training and test data, and `sklearn.svm.LinearSVC` for fitting a linear SVM classifier.
+
+I followed these steps to train a classifier:
+1. Read the images from the provided datasets `vehicles.zip` and `non-vehicles.zip`.
+2. Extract features (HOG, spatial binning, and color histogram).
+3. Normalize features using `StandardScaler`.
+4. Split data into training and test sets.
+5. Fit a linear SVM classifier.
+6. Measure test accuracy of classifier.
+7. Save the classifier for future use.
+
+I tried various experiments like disabling features and tweaking parameters with the goal of maximizing test accuracy. 
+
+My final model pickled in `YCrCb-ss(16, 16)-hb16-o9-p8-c2-hcALL-sf1-hist1-hog1-acc99.72.p` has a test accuracy of 99.72%. Here are its parameters:
+
+* Test accuracy: 0.9972
+* Spatial features: True
+* Spatial size: (16, 16)
+* Histogram features: True
+* Color histogram bins: 16
+* Color space: YCrCb
+* HOG features: True
+* HOG channel: ALL
+* HOG orientations: 9
+* HOG pixels per cell: 8
+* HOG cell per block: 2
 
 ###Sliding Window Search
 
