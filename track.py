@@ -43,7 +43,7 @@ class Box:
         return self.center.get_distance(other.center)
 
 class Vehicle:
-    def __init__(self, box, window_size = 10):
+    def __init__(self, box, window_size):
         self.box = box
         self.window_size = window_size
         
@@ -52,6 +52,8 @@ class Vehicle:
         
         self.frames_since_detected = 0
         
+        self.frames_detected = 1
+        
     def check_ownership(self, boxes):
         claimed = []
         for box in boxes:
@@ -59,10 +61,12 @@ class Vehicle:
         for c in claimed:
             if c:
                 self.frames_since_detected = 0
+                self.frames_detected += 1
                 return claimed
         self.frames_since_detected += 1
         if self.frames_since_detected > self.window_size:
             self.box = None
+            self.frames_detected = 0
         return claimed
         
     def check_ownership_single(self, other):
@@ -101,6 +105,7 @@ class Tracker:
         self.heatmap_threshold_per_frame = heatmap_threshold_per_frame
         self.vehicle_window_size = vehicle_window_size
         self.frames = deque()
+        self.smoothed_frames = deque()
         self.vehicles = []
         self.heatmap_boxes_count = 0
         
@@ -108,6 +113,7 @@ class Tracker:
         self.add_frame(searcher.search(img, 'full', self.search_params))
         
         heatmap, boxes = self.smooth_heatmaps()
+        self.add_smoothed_frame(heatmap, boxes)
         
         self.check_box_change(boxes)
         
@@ -118,9 +124,17 @@ class Tracker:
         
     def check_box_change(self, boxes):
         if len(boxes) != self.heatmap_boxes_count:
+            i = 0
+            for f in self.smoothed_frames:
+                if i >= 3:
+                    # Box change is genuine, so reset vehicles.
+                    break
+                if len(boxes) != len(f.label_boxes):
+                    # Do not reset vehicles because count of heatmap boxes has not stabilized.
+                    return
+                i+=1
             self.reset_vehicles()
-            
-        self.heatmap_boxes_count = len(boxes)
+            self.heatmap_boxes_count = len(boxes)
         
     def reset_vehicles(self):
         self.vehicles[:] = []
@@ -165,15 +179,29 @@ class Tracker:
         if len(self.frames) > self.heatmap_window_size:
             discard_frame = self.frames.pop()
 
+    def add_smoothed_frame(self, heatmap, boxes):
+        self.smoothed_frames.appendleft(Frame(heatmap, boxes))
+        
+        if len(self.smoothed_frames) > self.heatmap_window_size:
+            discard_frame = self.smoothed_frames.pop()
+            
     def smooth_heatmaps(self):
         heatmaps = []
         for f in self.frames:
             heatmaps.append(f.heatmap)
         heatmap = np.sum(heatmaps, axis = 0)
+        heatmap = self.boost_heatmap(heatmap)
         heatmap = sr.apply_threshold(heatmap, int(self.heatmap_threshold_per_frame * len(self.frames)))
         labels = label(heatmap)
         boxes = sr.convert_to_bboxes(labels)
         return heatmap, boxes
+        
+    def boost_heatmap(self, heatmap):
+        for vehicle in self.vehicles:
+            if vehicle.frames_detected > 24:
+                b = vehicle.box
+                heatmap[b.top_left.y : b.bottom_right.y, b.top_left.x : b.bottom_right.x] *= 3
+        return heatmap
             
 def process_img(img):
     global tracker
@@ -200,19 +228,21 @@ if __name__ == '__main__':
     
     sp = sr.SearchParams.get_defaults()
     
-    #for threshold in [0.75, 1]:
-        #print('Threshold: ', threshold)
-        #tracker = Tracker(searcher, sp, 5, heatmap_threshold_per_frame = threshold)
-        #process_video('test_video.mp4', 'output_video/test_video_th{}.mp4'.format(threshold))
-
-    hyperparams = []
+    for heatmap_window_size in [10]:
+        for threshold in [1.7]:
+            for vehicle_window_size in [7]:
+                tracker = Tracker(searcher, sp, 
+                                    heatmap_window_size, 
+                                    heatmap_threshold_per_frame = threshold, 
+                                    vehicle_window_size = vehicle_window_size)
+                process_video('test_video.mp4', 'output_video/test_video_boost_heat_th{}_hw{}_vw{}.mp4'.format(threshold, heatmap_window_size, vehicle_window_size))
     
-    for heatmap_window_size in [7, 10, 12]:
-        for threshold in [1.6, 1.7]:
+    for heatmap_window_size in [10, 12]:
+        for threshold in [1.7]:
             for vehicle_window_size in [7]:
                 print('Threshold: ', threshold, ', Heatmap Window Size: ', heatmap_window_size, ', Vehicle Window Size: ', vehicle_window_size)
                 tracker = Tracker(searcher, sp, 
                                     heatmap_window_size, 
                                     heatmap_threshold_per_frame = threshold, 
                                     vehicle_window_size = vehicle_window_size)
-                process_video('project_video.mp4', 'output_video/project_video_th{}_hw{}_vw{}.mp4'.format(threshold, heatmap_window_size, vehicle_window_size))
+                process_video('project_video.mp4', 'output_video/project_video_boost_heat_th{}_hw{}_vw{}.mp4'.format(threshold, heatmap_window_size, vehicle_window_size))
