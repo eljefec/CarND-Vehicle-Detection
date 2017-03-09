@@ -129,7 +129,7 @@ To keep the number of search windows small, I had less overlap at smaller scales
 ##TODO
 I experimented with the feature parameters (like spatial size, color histogram bin count, and HOG parameters) to optimize the test accuracy of my classifier as I described above. I manually tried different search parameters (like scale, y_start_stop, overlap, and scale count) and visually evaluated the results on the 6 test images below. I also tweaked the search parameters when I was evaluating my pipeline's output for the project video.
 
-At first, I applied a heatmap threshold to the output of my search pipeline, but I found I got better video results when I instead applied the heatmap threshold to a sliding window heatmap. This is explained more below.
+At first, I applied a heatmap threshold to each frame in my search pipeline, but I found I got better video results when I instead applied the heatmap threshold to the multi-frame heatmap. This is explained more below.
 
 Here are the heatmap and labeled bounding boxes for the 6 test images:
 
@@ -144,28 +144,36 @@ Here are the heatmap and labeled bounding boxes for the 6 test images:
 ### Video Implementation
 
 ####1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (somewhat wobbly or unstable bounding boxes are ok as long as you are identifying the vehicles most of the time with minimal false positives.)
-##TODO
-Here's a [link to my video result](./project_video.mp4)
+
+Here's a [link to my video result](./project_video_boost_heat_th1.7_hw12_vw7.mp4)
 
 
 ####2. Describe how (and identify where in your code) you implemented some kind of filter for false positives and some method for combining overlapping bounding boxes.
 
-##TODO
-I recorded the positions of positive detections in each frame of the video.  From the positive detections I created a heatmap and then thresholded that map to identify vehicle positions.  I then used `scipy.ndimage.measurements.label()` to identify individual blobs in the heatmap.  I then assumed each blob corresponded to a vehicle.  I constructed bounding boxes to cover the area of each blob detected.  
+My vehicle tracking pipeline is in `track.py` in class `Tracker`. A client calls `Tracker.track(img)` for each successive frame in a video.
 
-Here's an example result showing the heatmap from a series of frames of video, the result of `scipy.ndimage.measurements.label()` and the bounding boxes then overlaid on the last frame of video:
+For each frame, `Tracker` calls `Searcher.search()`. `Searcher.search()` returns a single-frame heatmap of classifier detections. `Tracker` ignores the bounding boxes returned by `Searcher.search()` and instead makes bounding boxes on a multi-frame heatmap. The `Searcher` class is in `search.py`.
 
-### Here are six frames and their corresponding heatmaps:
+`Tracker` filters for false positives by building a multi-frame heatmap and applying a threshold (see `Tracker.smooth_heatmaps()` in lines 188-197). The threshold value is per-frame and I settled on a value of 1.7. This means that as the `Tracker` builds up a larger sliding window of frames, the threshold for the heatmap increases.
 
-![alt text][image5]
+    heatmap = sr.apply_threshold(heatmap, int(self.heatmap_threshold_per_frame * len(self.frames)))
 
-### Here is the output of `scipy.ndimage.measurements.label()` on the integrated heatmap from all six frames:
-![alt text][image6]
+On the thresholded multi-frame heatmap, `Tracker` combines overlapping detections using `scipy.ndimage.measurements.label()` and returns a bounding box for each label blob. `Tracker` assumes each bounding box is a vehicle.
 
-### Here the resulting bounding boxes are drawn onto the last frame in the series:
-![alt text][image7]
+To smooth the bounding box around vehicles, I tracked individual vehicles in a `Vehicle` class. The `Vehicle` class recorded a sliding window of bounding boxes, and averaged them over time. This presented some challenges when cars overlapped because their respective bounding boxes merged in the heatmap. I dealt with this by resetting the vehicle tracker when the number of bounding boxes changed and stabilized at a new number. This code is in `Tracker.check_box_change()` in lines 125-137.
 
+Tracking vehicles requires an algorithm for deciding when a car has disappeared from view. My `Vehicle` class considered itself as disappeared when it has not found itself in several frames. The code for this is in `Vehicle.check_ownership()` in lines 66-69.
 
+I also added a feature for boosting the heatmap around confident vehicle detections. After a vehicle has been detected in enough frames, the `Tracker` boosts the heatmap within the vehicle's bounding box by a factor of 3. This code is in `Tracker.boost_heatmap()` in lines 199-204.
+
+I experimented with the `Tracker` parameters and evaluated the performance on the project video. I settled on these `Tracker` parameters:
+
+* Heatmap window size: 12
+* Vehicle window size: 7
+* Heatmap threshold per frame: 1.7
+* Threshold for boosting heatmap around a vehicle: 24 detected frames
+* Multiplier for boosting heatmap: 3
+* Threshold of frames indicating genuine box count change (for resetting vehicle-tracking): 3
 
 ---
 
