@@ -206,7 +206,7 @@ if __name__ == '__main__':
             
             labeled_img = draw_boxes(img, label_boxes)
             
-            fig = plt.figure(figsize = (8, 11))
+            fig = plt.figure(figsize = (8, 4), tight_layout = True)
             cl.visualize(fig, 1, 2, [heatmap, labeled_img], ['Heatmap', 'Labeled Boxes'])
             
             imgs.append(heatmap)
