@@ -16,7 +16,7 @@ The goals / steps of this project are the following:
 
 [//]: # (Image References)
 [car]: ./output_images/car.png
-[notcar]: ./output_images/notcar.png
+[noncar]: ./output_images/noncar.png
 [hog]: ./output_images/hog.png
 [video1]: ./project_video.mp4
 
@@ -42,7 +42,7 @@ I started by reading in all the `vehicle` and `non-vehicle` images.  Here is an 
 ![alt text][car]
 
 #####Not Car
-![alt text][notcar]
+![alt text][noncar]
 
 Here is an example using the `YCrCb` color space and HOG parameters of `orientations=9`, `pixels_per_cell=(8, 8)` and `cells_per_block=(2, 2)`:
 
