@@ -126,7 +126,6 @@ To keep the number of search windows small, I had less overlap at smaller scales
 
 ####2. Show some examples of test images to demonstrate how your pipeline is working.  What did you do to optimize the performance of your classifier?
 
-##TODO
 I experimented with the feature parameters (like spatial size, color histogram bin count, and HOG parameters) to optimize the test accuracy of my classifier as I described above. I manually tried different search parameters (like scale, y_start_stop, overlap, and scale count) and visually evaluated the results on the 6 test images below. I also tweaked the search parameters when I was evaluating my pipeline's output for the project video.
 
 At first, I applied a heatmap threshold to each frame in my search pipeline, but I found I got better video results when I instead applied the heatmap threshold to the multi-frame heatmap. This is explained more below.
@@ -160,7 +159,9 @@ For each frame, `Tracker` calls `Searcher.search()`. `Searcher.search()` returns
 
 On the thresholded multi-frame heatmap, `Tracker` combines overlapping detections using `scipy.ndimage.measurements.label()` and returns a bounding box for each label blob. `Tracker` assumes each bounding box is a vehicle.
 
-To smooth the bounding box around vehicles, I tracked individual vehicles in a `Vehicle` class. The `Vehicle` class recorded a sliding window of bounding boxes, and averaged them over time. This presented some challenges when cars overlapped because their respective bounding boxes merged in the heatmap. I dealt with this by resetting the vehicle tracker when the number of bounding boxes changed and stabilized at a new number. This code is in `Tracker.check_box_change()` in lines 125-137.
+To smooth the bounding box around vehicles, I tracked individual vehicles in a `Vehicle` class. The `Vehicle` class records a sliding window of bounding boxes, and averages them over time. The `Vehicle` class is in `track.py` in lines 45-93.
+
+Tracking vehicles individually presented a difficulty when cars overlap because their respective bounding boxes merge in the heatmap. I dealt with this by resetting the vehicle tracker when the number of bounding boxes changed and stabilized at a new number. This code is in `Tracker.check_box_change()` in lines 125-137.
 
 Tracking vehicles requires an algorithm for deciding when a car has disappeared from view. My `Vehicle` class considered itself as disappeared when it has not found itself in several frames. The code for this is in `Vehicle.check_ownership()` in lines 66-69.
 
@@ -183,10 +184,18 @@ I experimented with the `Tracker` parameters and evaluated the performance on th
 
 Key challenges were smoothing the bounding box around vehicles, differentiating between vehicles after they have overlapped, and reducing false positives when processing the video. I describe my approach for these in the above section.
 
-It was time-consuming to experiment with parameters when running on the video. I set up experiments to run overnight, then I would evaluate the results by watching the output videos one-by-one. I had an idea to speed this up by skipping some frames during processing, but I did not get around to implementing this.
+It was time-consuming to experiment with parameters when running on the video. I set up experiments to run overnight, then I would evaluate the results by watching the output videos one-by-one. I had an idea to speed up experimentation by skipping some frames during processing, but I did not get around to implementing this.
 
 My pipeline is likely to fail with false positives. If something resembles a car and lingers in view long enough, my `Tracker` will eventually detect it as a vehicle.
 
 My classifier will likely not detect cars at some angles. I scanned through the training set, and I noticed that not all angles were represented. More training data would improve my classifier's performance.
+
+My pipeline is not fast enough for real usage. On my laptop, it takes 1 second per frame. To be usable in a real setting, it must process frames much faster than that. Video frame rate is typically 20 to 30 frames per second.
+
+My pipeline will perform very poorly when there are many cars overlapping each other. They would be detected as large blobs. My pipeline could be made more robust by vehicle-differentiating algorithms. After detecting a vehicle, my `Tracker` could calculate its thumbprint based on color, shape, and heading. This could help to track vehicles despite overlap and occlusion.
+
+My pipeline could be improved by supporting both general searches and focused searches. The general searches would detect vehicles at a coarse scale, then after vehicles have been detected, the pipeline could do more focused searches around known vehicles. This would tighten bounding boxes, which would be important for location and speed estimation.
+
+My pipeline could be made more robust by estimating each vehicles' location and speed and predicting each vehicle's location in future frames. This could improve vehicle tracking. Also, these estimations would be useful for path planning and accident avoidance.
 
 ###Thank you for reading my report!
