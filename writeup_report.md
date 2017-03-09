@@ -61,6 +61,7 @@ The code for classifier training is in `train.py`, mainly in function `train_cla
 I trained a linear SVM using `sklearn.preprocessing.StandardScaler` for normalizing features, `sklearn.model_selection.train_test_split` for splitting training and test data, and `sklearn.svm.LinearSVC` for fitting a linear SVM classifier.
 
 I followed these steps to train a classifier:
+
 1. Read the images from the provided datasets `vehicles.zip` and `non-vehicles.zip`.
 2. Extract features (HOG, spatial binning, and color histogram).
 3. Normalize features using `StandardScaler`.
