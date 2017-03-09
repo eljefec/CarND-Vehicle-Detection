@@ -103,18 +103,20 @@ def convert_to_bboxes(labels):
     return bboxes
     
 class SearchParams:
-    def __init__(self, scale, y_start_stop):
+    def __init__(self, scale, y_start_stop, cells_per_step):
         self.scale = scale
         self.y_start_stop = y_start_stop
+        self.cells_per_step = cells_per_step
         
     def str(self):
-        return 'Scale: ' + str(self.scale) + ', y_start_stop: ' + str(self.y_start_stop)
+        return 'Scale: ' + str(self.scale) + ', y_start_stop: ' + str(self.y_start_stop) + ', cells_per_step: ' + str(self.cells_per_step)
         
     @staticmethod
     def get_defaults():
-        return [SearchParams(1, (400, 500)),
-                SearchParams(1.5, (400, 550)),
-                SearchParams(2, (400, 656))]
+        return [SearchParams(0.75, (400, 500), 4),
+                SearchParams(1, (400, 500), 4),
+                SearchParams(1.5, (400, 550), 2),
+                SearchParams(2, (400, 656), 2)]
     
 class Searcher:
     def __init__(self, feature_params, clf, X_scaler):
@@ -126,7 +128,7 @@ class Searcher:
         search_window_total = 0
         all_hot_windows = []
         for sp in search_params:
-            hot_windows, search_window_count = self.single_search(img, hog_flavor, sp.scale, sp.y_start_stop)
+            hot_windows, search_window_count = self.single_search(img, hog_flavor, sp)
             all_hot_windows.extend(hot_windows)
             search_window_total += search_window_count
             
@@ -142,11 +144,11 @@ class Searcher:
         return heatmap, label_boxes, search_window_total
     
     # hog_flavor values: 'local', 'full'
-    def single_search(self, img, hog_flavor, scale, y_start_stop):
+    def single_search(self, img, hog_flavor, sp):
         if hog_flavor == 'local':
-            return self.search_local_hog(img, scale, y_start_stop)
+            return self.search_local_hog(img, sp.scale, sp.y_start_stop)
         elif hog_flavor == 'full':
-            return self.search_full_hog(img, scale, y_start_stop)
+            return self.search_full_hog(img, sp)
         else:
             raise ValueError('Invalid hog_flavor. [{}]'.format(hog_flavor))
         
@@ -165,13 +167,14 @@ class Searcher:
         
         return hot_windows, len(windows)
         
-    def search_full_hog(self, img, scale, y_start_stop):
+    def search_full_hog(self, img, sp):
         hot_windows, window_count = cl.full_hog_single_img(img, 
                                                             self.feature_params, 
                                                             self.clf, 
                                                             self.X_scaler, 
-                                                            scale, 
-                                                            y_start_stop)
+                                                            sp.scale, 
+                                                            sp.y_start_stop,
+                                                            sp.cells_per_step)
         
         return hot_windows, window_count
     

@@ -188,13 +188,13 @@ def visualize(fig, rows, cols, imgs, titles):
             plt.title(titles[i])
     plt.show()
     
-def full_hog(filename, fp, clf, X_scaler, scale):
+def full_hog(filename, fp, clf, X_scaler, scale, cells_per_step):
     img = mpimg.imread(filename)
-    return full_hog_single_image(img, fp, clf, X_scaler, scale)
+    return full_hog_single_image(img, fp, clf, X_scaler, scale, cells_per_step)
     
 # Based on Ryan Keenan's code in Vehicle Detection Walkthrough of Project Q&A video.
 # https://www.youtube.com/watch?v=P2zwrTM8ueA
-def full_hog_single_img(img, fp, clf, X_scaler, scale, y_start_stop):
+def full_hog_single_img(img, fp, clf, X_scaler, scale, y_start_stop, cells_per_step):
     ystart = y_start_stop[0]
     ystop = y_start_stop[1]
     
@@ -230,7 +230,6 @@ def full_hog_single_img(img, fp, clf, X_scaler, scale, y_start_stop):
     window = 64
     nblocks_per_window = (window // fp.pix_per_cell) - 1
     # Controls overlap. 
-    cells_per_step = 2
     nxsteps = (nxblocks - nblocks_per_window) // cells_per_step
     nysteps = (nyblocks - nblocks_per_window) // cells_per_step
     

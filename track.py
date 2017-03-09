@@ -204,10 +204,12 @@ if __name__ == '__main__':
         #print('Threshold: ', threshold)
         #tracker = Tracker(searcher, sp, 5, heatmap_threshold_per_frame = threshold)
         #process_video('test_video.mp4', 'output_video/test_video_th{}.mp4'.format(threshold))
+
+    hyperparams = []
     
-    for threshold in [0.75, 1]:
-        for heatmap_window_size in [5, 7, 10]:
-            for vehicle_window_size in [5, 7, 10]:
+    for heatmap_window_size in [7, 10, 12]:
+        for threshold in [1.6, 1.7]:
+            for vehicle_window_size in [7]:
                 print('Threshold: ', threshold, ', Heatmap Window Size: ', heatmap_window_size, ', Vehicle Window Size: ', vehicle_window_size)
                 tracker = Tracker(searcher, sp, 
                                     heatmap_window_size, 
