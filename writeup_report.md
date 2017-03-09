@@ -181,6 +181,12 @@ I experimented with the `Tracker` parameters and evaluated the performance on th
 
 ####1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-##TODO
-Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
+Key challenges were smoothing the bounding box around vehicles, differentiating between vehicles after they have overlapped, and reducing false positives when processing the video. I describe my approach for these in the above section.
 
+It was time-consuming to experiment with parameters when running on the video. I set up experiments to run overnight, then I would evaluate the results by watching the output videos one-by-one. I had an idea to speed this up by skipping some frames during processing, but I did not get around to implementing this.
+
+My pipeline is likely to fail with false positives. If something resembles a car and lingers in view long enough, my `Tracker` will eventually detect it as a vehicle.
+
+My classifier will likely not detect cars at some angles. I scanned through the training set, and I noticed that not all angles were represented. More training data would improve my classifier's performance.
+
+###Thank you for reading my report!
