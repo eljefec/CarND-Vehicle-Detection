@@ -96,7 +96,25 @@ My final model pickled in `YCrCb-ss(16, 16)-hb16-o9-p8-c2-hcALL-sf1-hist1-hog1-a
 
 ####1. Describe how (and identify where in your code) you implemented a sliding window search.  How did you decide what scales to search and how much to overlap windows?
 
-##TODO
+This code is in `search.py` in function `slide_window()` for the patch-by-patch implementation and in `classify.py` in function `full_hog_single_img()` for the implementation where HOG is calculated once per scale level.
+
+My implementation supports multi-scale search.
+
+I chose multiple scales that were appropriate for finding cars at different distances. Near the horizon, I searched smaller scales in a narrow band, and in the bottom half of the image, I searched larger scales in a wider band.
+
+I ran various searches with different scale parameters on test images, then on the project video to see what values worked well.
+
+I settled on these values. The parameters are `(scale, y_start_stop, cells_per_step)`.
+
+    def get_defaults():
+        return [SearchParams(0.75, (400, 500), 4),
+                SearchParams(1, (400, 500), 4),
+                SearchParams(1.5, (400, 550), 2),
+                SearchParams(2, (400, 656), 2)]
+
+cells_per_step controls overlap between patches in `full_hog_single_img()`. 4 is an overlap of 0.5, while 2 is an overlap of 0.75.
+
+To keep the number of search windows small, I had less overlap at smaller scales and more overlap at larger scales.
 
 ![alt text][sliding_window]
 
