@@ -8,7 +8,7 @@
 The goals / steps of this project are the following:
 
 * Perform a Histogram of Oriented Gradients (HOG) feature extraction on a labeled training set of images and train a classifier Linear SVM classifier
-* Optionally, you can also apply a color transform and append binned color features, as well as histograms of color, to your HOG feature vector. 
+* Optionally, you can also apply a color transform and append binned color features, as well as histograms of color, to your HOG feature vector.
 * Note: for those first two steps don't forget to normalize your features and randomize a selection for training and testing.
 * Implement a sliding-window technique and use your trained classifier to search for vehicles in images.
 * Run your pipeline on a video stream (start with the test_video.mp4 and later implement on full project_video.mp4) and create a heat map of recurring detections frame by frame to reject outliers and follow detected vehicles.
@@ -29,27 +29,27 @@ The goals / steps of this project are the following:
 [video1]: ./project_video.mp4
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/513/view) Points
-###Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
+### Here I will consider the rubric points individually and describe how I addressed each point in my implementation.
 
 ---
-###Writeup / README
+### Writeup / README
 
-####1. Provide a Writeup / README that includes all the rubric points and how you addressed each one.  You can submit your writeup as markdown or pdf.  [Here](https://github.com/udacity/CarND-Vehicle-Detection/blob/master/writeup_template.md) is a template writeup for this project you can use as a guide and a starting point.  
+#### 1. Provide a Writeup / README that includes all the rubric points and how you addressed each one.  You can submit your writeup as markdown or pdf.  [Here](https://github.com/udacity/CarND-Vehicle-Detection/blob/master/writeup_template.md) is a template writeup for this project you can use as a guide and a starting point.
 
 This is my write-up. Thank you for reviewing my project!
 
-###Histogram of Oriented Gradients (HOG)
+### Histogram of Oriented Gradients (HOG)
 
-####1. Explain how (and identify where in your code) you extracted HOG features from the training images.
+#### 1. Explain how (and identify where in your code) you extracted HOG features from the training images.
 
 This code is in `classify.py` in functions `get_hog_features()` (lines 79-97), and `full_hog_single_img()` (lines 197-274). `single_img_features()` (lines 131-176) gets spatial, color, and HOG features for one patch at a time, whereas `full_hog_single_img()` calculates HOG once for an image then searches across the image for classifier matches.
 
 I started by reading in all the `vehicle` and `non-vehicle` images.  Here is an example of one of each of the `vehicle` and `non-vehicle` classes:
 
-#####Car
+##### Car
 ![alt text][car]
 
-#####Not Car
+##### Not Car
 ![alt text][noncar]
 
 The code depends on `skimage.feature.hog()` to extract HOG features from an image.
@@ -62,11 +62,11 @@ I also included spatial information and color histogram in the features. Here is
 
 ![alt text][color_spatial]
 
-####2. Explain how you settled on your final choice of HOG parameters.
+#### 2. Explain how you settled on your final choice of HOG parameters.
 
 I tried various combinations of parameters including HOG and evaluated the test accuracy of a trained linear SVM classifier on a set-aside test set. I settled on the HOG parameters that led to reasonably high test accuracy of the classifier.
 
-####3. Describe how (and identify where in your code) you trained a classifier using your selected HOG features (and color features if you used them).
+#### 3. Describe how (and identify where in your code) you trained a classifier using your selected HOG features (and color features if you used them).
 
 The code for classifier training is in `train.py`, mainly in function `train_classifier()` (lines 16-65).
 
@@ -98,9 +98,9 @@ My final model pickled in `YCrCb-ss(16, 16)-hb16-o9-p8-c2-hcALL-sf1-hist1-hog1-a
 * HOG pixels per cell: 8
 * HOG cell per block: 2
 
-###Sliding Window Search
+### Sliding Window Search
 
-####1. Describe how (and identify where in your code) you implemented a sliding window search.  How did you decide what scales to search and how much to overlap windows?
+#### 1. Describe how (and identify where in your code) you implemented a sliding window search.  How did you decide what scales to search and how much to overlap windows?
 
 This code is in `search.py` in function `slide_window()` for the patch-by-patch implementation and in `classify.py` in function `full_hog_single_img()` for the implementation where HOG is calculated once per scale level.
 
@@ -124,7 +124,7 @@ To keep the number of search windows small, I had less overlap at smaller scales
 
 ![alt text][sliding_window]
 
-####2. Show some examples of test images to demonstrate how your pipeline is working.  What did you do to optimize the performance of your classifier?
+#### 2. Show some examples of test images to demonstrate how your pipeline is working.  What did you do to optimize the performance of your classifier?
 
 I experimented with the feature parameters (like spatial size, color histogram bin count, and HOG parameters) to optimize the test accuracy of my classifier as I described above. I manually tried different search parameters (like scale, y_start_stop, overlap, and scale count) and visually evaluated the results on the 6 test images below. I also tweaked the search parameters when I was evaluating my pipeline's output for the project video.
 
@@ -142,12 +142,12 @@ Here are the heatmap and labeled bounding boxes for the 6 test images:
 
 ### Video Implementation
 
-####1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (somewhat wobbly or unstable bounding boxes are ok as long as you are identifying the vehicles most of the time with minimal false positives.)
+#### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (somewhat wobbly or unstable bounding boxes are ok as long as you are identifying the vehicles most of the time with minimal false positives.)
 
 Here's a [link to my video result](./project_video_boost_heat_th1.7_hw12_vw7.mp4)
 
 
-####2. Describe how (and identify where in your code) you implemented some kind of filter for false positives and some method for combining overlapping bounding boxes.
+#### 2. Describe how (and identify where in your code) you implemented some kind of filter for false positives and some method for combining overlapping bounding boxes.
 
 My vehicle tracking pipeline is in `track.py` in class `Tracker`. A client calls `Tracker.track(img)` for each successive frame in a video.
 
@@ -178,9 +178,9 @@ I experimented with the `Tracker` parameters and evaluated the performance on th
 
 ---
 
-###Discussion
+### Discussion
 
-####1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
+#### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
 Key challenges were smoothing the bounding box around vehicles, differentiating between vehicles after they have overlapped, and reducing false positives when processing the video. I describe my approach for these in the above section.
 
@@ -198,4 +198,4 @@ My pipeline could be improved by supporting both general searches and focused se
 
 My pipeline could be made more robust by estimating each vehicles' location and speed and predicting each vehicle's location in future frames. This could improve vehicle tracking. Also, these estimations would be useful for path planning and accident avoidance.
 
-###Thank you for reading my report!
+### Thank you for reading my report!
